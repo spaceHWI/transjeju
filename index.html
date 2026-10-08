@@ -144,6 +144,20 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .flow i.up{background:#cfe6a8}.flow i.dn{background:#f3c1bb}
 .absorb{font-weight:400;font-size:11px;color:#4f8f3a;animation:blink 1.2s ease-in-out infinite}
 @keyframes blink{50%{opacity:.35}}
+.nflow{display:flex;flex-direction:column;gap:4px;padding-bottom:7px;border-bottom:2px dashed var(--line)}
+.nf{display:grid;grid-template-columns:86px minmax(0,1fr) 30px 98px;gap:6px;align-items:center;font-family:var(--display);font-size:12px}
+.nf .nt b,.nf .nt2 b{font-weight:400}
+.nf .nt2 b.off{color:var(--muted)}
+.nbar{height:10px;border:1.5px solid var(--ink);border-radius:6px;background:var(--card);overflow:hidden}
+.nbar i{display:block;height:100%;background:#f2c230;transition:width .4s}
+.arrow{position:relative;height:10px;display:flex;justify-content:space-between;align-items:center}
+.arrow::after{content:'➜';position:absolute;right:-2px;top:-5px;font-size:12px;color:var(--muted)}
+.arrow em{width:4px;height:4px;border-radius:50%;background:var(--line);display:block}
+.nf.on .arrow em{background:#7fae4e;animation:flowdot 1s linear infinite}
+.nf.on .arrow em:nth-child(2){animation-delay:.33s}.nf.on .arrow em:nth-child(3){animation-delay:.66s}
+.nf.on .arrow::after{color:#4f8f3a}
+@keyframes flowdot{0%{opacity:.2;transform:translateX(-3px)}50%{opacity:1}100%{opacity:.2;transform:translateX(3px)}}
+@media (prefers-reduced-motion:reduce){.nf.on .arrow em{animation:none}}
 .tbar{position:relative;height:14px;margin-top:3px;border:2px solid var(--ink);border-radius:8px;background:linear-gradient(90deg,#f3c1bb 0,#fbe39a 30%,#fbf8f1 50%,#fbe39a 70%,#f6c99a 100%)}
 .tbar b{position:absolute;top:0;bottom:0;background:#9cc65e;border-left:2px solid var(--ink);border-right:2px solid var(--ink)}
 .tbar i{position:absolute;top:-6px;width:0;height:0;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--ink);transition:left .3s}
@@ -284,7 +298,7 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
       <div class="presets" id="presets"></div>
       <div class="stats" id="stats"></div>
       <div class="derived" id="derived"></div>
-      <div class="est"><div><div class="lbl" style="color:var(--ink)">이 빌드의 예상 완주</div><div class="v num" id="estTime">-</div></div><div style="font-size:13px;max-width:28ch">보급을 잘 챙겼을 때 기준. 가상 1위 목표는 22시간 35분.</div></div>
+      <div class="est"><div><div class="lbl" style="color:var(--ink)">이 빌드의 예상 완주</div><div class="v num" id="estTime">-</div></div><div style="font-size:13px;max-width:28ch">보급을 잘 챙겼을 때 기준. 가상 1위는 17시간 46분 (실제 2025년 우승 16:55, 완주율 약 79%).</div></div>
       <button class="btn primary" id="startBtn" style="font-size:20px">출발선에 서기</button>
     </div>
 
@@ -447,7 +461,7 @@ function derive(s){
   const cF = 0.5*s.end + 0.3*s.agi + 0.2*s.flex;
   const cU = 0.5*s.str + 0.35*s.end + 0.15*s.dur;
   const cD = 0.45*s.agi + 0.3*s.dur + 0.25*s.flex;
-  return { vF: 9 + 0.33*cF, VAM: 550 + 38*cU, DESC: 1600 + 90*cD, eff: 0.7 + 0.015*s.dig };
+  return { vF: 3 + 0.95*cF, VAM: 100 + 80*cU, DESC: 700 + 170*cD, eff: 0.7 + 0.015*s.dig };
 }
 function paceHpk(d, km){
   const sg = SEG[segOf(km)], g = (elevAt(km + STEP) - elevAt(km)) / (STEP * 1000);
@@ -461,7 +475,7 @@ const WATER_MAX = 6;
 function newRunner(raw){
   const stats = scaleStats(raw);
   return { raw:{...raw}, s:{...stats}, d:derive(stats), km:0, t:0, seg:0, pace:'norm',
-    E:90, H:90, Na:80, S:0, F:0, Z:10, M:85, B:15,
+    E:90, H:90, Na:80, S:0, gW:0, gNa:0, F:0, Z:10, M:85, B:15,
     inv:{...KIT}, eats:[], intake:[], tot:{c:0,w:0,na:0,caf:0}, blister:false, cramp:0, holding:false, nextSupply:35,
     cd:{}, flags:{}, splits:[{cp:0, arr:0, dep:0}], log:[], dnf:null, done:false, stopMin:0 };
 }
@@ -506,6 +520,10 @@ function physio(st, dt, dk, up, down){
   const night = hc >= 19.5 || hc < 6, cold = night && elevAt(st.km) > 1200;
   // absorb carbs from the gut into energy
   const ab = Math.min(st.S, absorbRate(st) * h); st.S -= ab; st.E += ab * 0.45;
+  // water and sodium also pass through the gut first: fast, but not instant
+  const aw = Math.min(st.gW || 0, 900 * h); st.gW = (st.gW || 0) - aw; st.H += aw * 0.03; st.B += aw * 0.02;
+  const an = Math.min(st.gNa || 0, 1800 * h); st.gNa = (st.gNa || 0) - an; st.Na += an * 0.02;
+  if (aw > 0 && !(st.gNa > 0)) st.Na -= aw * 0.004;
   st.E -= 20 * P.drain * (1.25 - 0.025*s.end) * (up > 0 ? 1.2 : 1) * (cold ? 1.15 : 1) * h;
   const heat = (hc >= 10 && hc < 17) ? 7 : (hc >= 8 && hc < 19 ? 3 : 0);
   st.H -= (12 + heat) * P.drain * (night ? 0.75 : 1) * h;   // ~500 ml/h to stay level
@@ -527,7 +545,7 @@ function physio(st, dt, dk, up, down){
 // Smoothed per-hour intake: each item decays with a 45-minute time constant, so the meter
 // glides down between feeds instead of dropping off a 60-minute cliff. Steady eating reads true g/h.
 function hourIntake(st, mins){
-  const tau = mins === 60 || !mins ? 45 : mins * 0.75, o = {c:0, w:0, na:0, caf:0}, raw = {c:0, w:0, na:0, caf:0};
+  const tau = mins === 60 || !mins ? 90 : mins * 1.5, o = {c:0, w:0, na:0, caf:0}, raw = {c:0, w:0, na:0, caf:0};
   for (const x of st.intake){
     const dt = st.t - x.t; if (dt < 0) continue;
     const k = Math.exp(-dt / tau) * 60 / tau;
@@ -657,8 +675,8 @@ const FOOD = {
 function ingest(st, it){
   const c = it.c || 0, w = it.w || 0, na = it.na || 0, caf = it.caf || 0;
   if (c) st.S += c;
-  if (w){ st.H += w * 0.03; st.B += w * 0.02; if (!na) st.Na -= w * 0.004; }
-  if (na) st.Na += na * 0.02;
+  if (w) st.gW = (st.gW || 0) + w;
+  if (na) st.gNa = (st.gNa || 0) + na;
   if (caf){
     const recent = st.intake.filter(x => st.t - x.t < 180).reduce((a, x) => a + x.caf, 0);
     st.Z -= caf * 0.3 / (1 + st.tot.caf / 400); // tolerance builds over the race
@@ -708,11 +726,21 @@ function recommend(st, k){
 const RIVAL_PRE = ['백록담','올레','현무암','돌하르방','조랑말','한라봉','곶자왈','바람의 섬','해녀','오름','귤밭','삼다수','성산','우도','협재','사려니','윗세','영실','관음사','성판악','가시리','표선','중문','애월','함덕','비자림','동백','유채꽃','감귤','흑돼지','갈치','몸국','고사리','억새','용눈이','새별','물영아리','따라비','다랑쉬','한라'];
 const RIVAL_SUF = ['질주자','사냥꾼','폭주기관차','다람쥐','산양','바람','러너','탐험가','방랑자','달리미','고라니','토끼','독수리','노루','날쌘돌이'];
 const RIVAL_N = 100;
+// Field shaped on the real TransJeju 2025 Jeju100M result: winner 16:55:51, 10th 23:03, ~21% DNF.
+const RIVAL_TOP = [16.93, 17.69, 18.13, 19.59, 21.47, 21.62, 22.19, 22.38, 22.82, 23.06];
 const RIVALS = (() => {
   const rnd = mulberry32(4801), combos = [];
   for (const p of RIVAL_PRE) for (const q of RIVAL_SUF) combos.push(p + ' ' + q);
   for (let i = combos.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [combos[i], combos[j]] = [combos[j], combos[i]]; }
-  return combos.slice(0, RIVAL_N).map((n, i) => [n, Math.round(1355 + 850 * Math.pow(i / (RIVAL_N - 1), 1.35))]);
+  const out = [];
+  for (let i = 0; i < RIVAL_N; i++){
+    let h, dnf = null;
+    if (i < 10) h = RIVAL_TOP[i];
+    else if (i < 79) h = 23.5 + 13.2 * Math.pow((i - 9) / 69, 0.85);
+    else { h = 28 + rnd() * 8; dnf = 4 + Math.floor(rnd() * 7); }
+    out.push([combos[i], Math.round(h * 60 * 1.05), dnf]); // 5% slower than the real field so a perfect run can win
+  }
+  return out;
 })();
 function stdCum(){
   const d = derive({end:10,str:10,agi:10,dur:10,flex:10,dig:10,men:10});
@@ -725,16 +753,17 @@ function stdCum(){
 }
 function makeRivals(seed){
   const rnd = mulberry32(seed), cum = stdCum(), last = cum[cum.length - 1];
-  return RIVALS.map(([name, target], ri) => {
+  return RIVALS.map(([name, target, dnf], ri) => {
     const style = (rnd() - 0.5) * 0.08; // + climber / - runner
     const segs = []; for (let i = 1; i < cum.length; i++){ const climb = SEG[i-1].gain / (CPS[i].km - CPS[i-1].km) > 40; segs.push((cum[i] - cum[i-1]) * (1 + (climb ? -style : style) + (rnd() - 0.5) * 0.1)); }
     const tot = segs.reduce((a, b) => a + b, 0), cpT = [0]; let acc = 0;
     segs.forEach(x => { acc += x * target / tot; cpT.push(acc); });
-    return { name, target, cpT, idx: ri };
+    return { name, target: dnf ? null : target, dnf, stopT: dnf ? cpT[dnf] : null, cpT, idx: ri };
   });
 }
 function rivalKm(r, t){
-  if (t >= r.target) return TOTAL_KM;
+  if (r.dnf && t >= r.stopT) return CPS[r.dnf].km;
+  if (r.target && t >= r.target) return TOTAL_KM;
   let i = 0; while (i < r.cpT.length - 2 && t >= r.cpT[i+1]) i++;
   const f = (t - r.cpT[i]) / (r.cpT[i+1] - r.cpT[i]);
   return CPS[i].km + (CPS[i+1].km - CPS[i].km) * Math.max(0, Math.min(1, f));
@@ -972,8 +1001,8 @@ $('#cplist').innerHTML = CPS.slice(1).map((c, i) => `<span>${i + 1 === 12 ? 'F' 
 // ---------- race ----------
 let running = false, lastPace = '', st = null, rivals = [], speed = 1, modalOpen = false, lastT = 0, raf = 0, lastRender = 0, finished = false;
 const GAME_MIN_PER_SEC = 6;
-const GAUGES = [['E','에너지',0],['H','수분',0],['Na','전해질',0],['M','멘탈',0],['F','근피로',1],['Z','졸음',1],['B','화장실',1]];
-const TARGETS = [['c','탄수화물','g',50,70],['w','수분','ml',450,750],['na','나트륨','mg',300,600]];
+const GAUGES = [['E','에너지',0],['H','수분',0],['Na','전해질',0],['M','멘탈',0],['S','더부룩함',1],['F','근피로',1],['Z','졸음',1],['B','화장실',1]];
+const TARGETS = [['c','탄수화물','g',40,75],['w','수분','ml',380,800],['na','나트륨','mg',250,700]];
 // Target band sits in the middle of each bar (scale 0 .. lo+hi), with a pin for the last-60-minute rate.
 function stomachState(){
   if (st.S < 8) return ['텅 빔 · 곧 배고픔', 'bad'];
@@ -994,10 +1023,12 @@ function intakeHTML(compact){
     hi.w >= 450 ? `<i class="up">수분 ▲ 유지</i>` : `<i class="dn">수분 ▼ 부족</i>`,
     hi.na >= 300 ? `<i class="up">전해질 ▲ 유지</i>` : `<i class="dn">전해질 ▼ 부족</i>`
   ].join('');
-  return `<div class="intake ${compact ? 'compact' : ''}">
-    <div class="stom"><div class="gl"><span>내 위 속 <em class="tg ${ss[1]}">${ss[0]}</em></span><span class="num">더부룩함 ${Math.round(st.S)}${mins ? ' · 다 소화까지 ' + mins + '분' : ''}</span></div>
-      <div class="sbar"><i style="width:${Math.min(100, st.S)}%"></i><b style="left:8%;width:22%"></b><span style="left:60%"></span></div>
-      <div class="flow"><span class="lbl">위 → 몸으로</span>${flow}</div></div>
+  const flowRow = (label, amt, unit, max, target, perH) => `<div class="nf ${amt > 0.5 ? 'on' : ''}"><span class="nt">${label} <b class="num">${Math.round(amt)}${unit}</b></span><span class="nbar"><i style="width:${Math.min(100, amt / max * 100)}%"></i></span><span class="arrow"><em></em><em></em><em></em></span><span class="nt2">${target} ${amt > 0.5 ? '<b class="num">+' + Math.round(perH) + '/시간</b>' : '<b class="num off">정지</b>'}</span></div>`;
+  const nutr = `<div class="nflow"><div class="lbl">먹은 영양소 → 몸으로 바뀌는 중</div>
+    ${flowRow('탄수', st.S, 'g', 100, '에너지', Math.min(st.S * 60, rate) * 0.45)}
+    ${flowRow('물', st.gW || 0, 'ml', 750, '수분', Math.min((st.gW || 0) * 60, 900) * 0.03)}
+    ${flowRow('나트륨', st.gNa || 0, 'mg', 1000, '전해질', Math.min((st.gNa || 0) * 60, 1800) * 0.02)}</div>`;
+  return `<div class="intake ${compact ? 'compact' : ''}">${nutr}
     <div class="lbl">시간당 먹는 속도 · 가운데 초록에 맞추기${recent ? '' : ' · 1시간째 아무것도 안 먹음'}</div>${TARGETS.map(([k, n, u, lo, hi2]) => {
     const v = hi[k], max = lo + hi2, pos = Math.min(100, v / max * 100);
     const st2 = v < lo ? (v < lo * 0.6 ? ['많이 부족', 'bad'] : ['부족', 'low']) : v > hi2 ? ['과다', 'over'] : ['적정', 'ok'];
@@ -1016,9 +1047,9 @@ const EXTRA_FX = {
 function effChips(it, k){
   const o = [];
   if (k === 'water' && it === FOOD.water) o.push(['물 1.5L 충전', 1]);
-  if (it.c) o.push([`탄수 +${it.c}g`, 2], [`에너지 +${Math.round(it.c * 0.45)} ⏳`, 1], [`더부룩함 +${it.c}`, 0]);
-  if (it.w) o.push([`물 +${it.w}ml`, 2], [`수분 +${Math.round(it.w * 0.03)}`, 1], [`화장실 +${Math.round(it.w * 0.02)}`, 0]);
-  if (it.na) o.push([`나트륨 +${it.na}mg`, 2], [`전해질 +${Math.round(it.na * 0.02)}`, 1]);
+  if (it.c) o.push([`탄수 +${it.c}g ➜ 에너지 +${Math.round(it.c * 0.45)}`, 2], [`더부룩함 +${it.c}`, 0]);
+  if (it.w) o.push([`물 +${it.w}ml ➜ 수분 +${Math.round(it.w * 0.03)}`, 2], [`화장실 +${Math.round(it.w * 0.02)}`, 0]);
+  if (it.na) o.push([`나트륨 +${it.na}mg ➜ 전해질 +${Math.round(it.na * 0.02)}`, 2]);
   if (it.caf) o.push([`졸음 −${Math.round(it.caf * 0.3 / (1 + st.tot.caf / 400))}`, 1]);
   (EXTRA_FX[k] || []).forEach(x => o.push(x));
   return `<span class="ech">${o.map(([t, g]) => `<i class="${g === 2 ? 'in' : g ? 'up' : 'nt'}">${t}</i>`).join('')}</span>`;
@@ -1029,7 +1060,7 @@ function gaugeHTML(keys){
   const one = ([k, n, rev]) => {
     const cap = k === 'E' ? eMax(st) : 100;
     const col = rev ? (st[k] < 40 ? '#b9a6d6' : st[k] < 70 ? '#8b6bb3' : '#5e3f8f') : gColor(k === 'E' ? st[k] / cap * 100 : st[k], 0);
-    return `<div class="g ${rev ? 'neg' : ''}"><div class="gl"><span>${n}</span><span>${k === 'E' && st.S > 0 ? '<b class="absorb" title="위 속 음식이 소화되어 에너지로 들어오는 중">▲</b> ' : ''}${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${col}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; };
+    return `<div class="g ${rev ? 'neg' : ''}"><div class="gl"><span>${n}</span><span>${(k === 'E' && st.S > 0.5) || (k === 'H' && st.gW > 0.5) || (k === 'Na' && st.gNa > 0.5) ? '<b class="absorb" title="먹은 영양소가 들어오는 중">▲</b> ' : ''}${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${col}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; };
   const list = GAUGES.filter(g => !keys || keys.includes(g[0]));
   const good = list.filter(g => !g[2]), bad = list.filter(g => g[2]);
   return good.map(one).join('') + (bad.length ? `<div class="gsep">쌓일수록 나쁨</div>` + bad.map(one).join('') : '');
@@ -1057,9 +1088,9 @@ function say(text, fx){
 }
 function toast(text, fx){ say(text, fx); }
 function standings(){
-  const list = rivals.map((r, i) => ({ name: r.name, km: rivalKm(r, st.t), fin: st.t >= r.target ? r.target : null, rival: i }));
+  const list = rivals.map((r, i) => ({ name: r.name, km: rivalKm(r, st.t), fin: r.target && st.t >= r.target ? r.target : null, out: r.dnf && st.t >= r.stopT, rival: i }));
   list.push({ name: me.name, km: st.km, fin: finished ? st.t : null, me: true });
-  list.sort((a, b) => (a.fin != null && b.fin != null) ? a.fin - b.fin : (a.fin != null ? -1 : b.fin != null ? 1 : b.km - a.km));
+  list.sort((a, b) => (!!a.out - !!b.out) || ((a.fin != null && b.fin != null) ? a.fin - b.fin : (a.fin != null ? -1 : b.fin != null ? 1 : b.km - a.km)));
   return list;
 }
 function estTo(kmTo){ let t = 0, m = speedMul(st); for (let k = st.km; k < kmTo; k += 0.2) t += paceHpk(st.d, k) * Math.min(0.2, kmTo - k) * 60 / m; return t; }
@@ -1080,7 +1111,7 @@ function renderRace(full){
   $('#elapsed').textContent = '경과 ' + fmtDur(st.t, true);
   if (!full && performance.now() - lastRender < 160) return;
   lastRender = performance.now();
-  rivals.forEach((r, i) => { const k = rivalKm(r, st.t), p = routePos(k); const g = document.getElementById('rv' + i); g.setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); g.style.opacity = k >= TOTAL_KM ? 0.3 : 1;
+  rivals.forEach((r, i) => { const k = rivalKm(r, st.t), p = routePos(k); const g = document.getElementById('rv' + i); g.setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); g.style.opacity = k >= TOTAL_KM || (r.dnf && st.t >= r.stopT) ? 0.25 : 1;
     const pr = document.getElementById('pr' + i); pr.setAttribute('cx', drawProfile.X(k)); pr.setAttribute('cy', drawProfile.Y(elevAt(k)) - 2); });
   // completed route
   const pts = []; for (let k = 0; k <= st.km; k += 0.5) pts.push(routePos(k)); pts.push(mypos);
@@ -1103,7 +1134,7 @@ function renderRace(full){
     <div class="row"><span>보급 주머니</span><b class="num" style="font-size:14px">젤 ${st.inv.gel} · 카페인 ${st.inv.caf} · 바 ${st.inv.bar} · 소금 ${st.inv.salt} · 물 ${st.inv.water}/${WATER_MAX}</b></div>`;
   const top = sd.slice(0, 6); if (myRank > 6) top.push(sd[myRank - 1]);
   const lead = sd[0];
-  $('#ranks').innerHTML = top.map(x => { const r = sd.indexOf(x) + 1; const info = x.fin != null ? '완주 ' + fmtDur(x.fin) : (x === lead ? x.km.toFixed(1) + 'km' : '−' + (lead.fin != null ? (TOTAL_KM - x.km) : (lead.km - x.km)).toFixed(1) + 'km'); return `<div class="rk-row ${x.me ? 'me' : ''}"><span>${r}</span><span class="n">${esc(x.name)}</span><span class="d">${info}</span></div>`; }).join('');
+  $('#ranks').innerHTML = top.map(x => { const r = sd.indexOf(x) + 1; const info = x.out ? 'DNF' : x.fin != null ? '완주 ' + fmtDur(x.fin) : (x === lead ? x.km.toFixed(1) + 'km' : '−' + (lead.fin != null ? (TOTAL_KM - x.km) : (lead.km - x.km)).toFixed(1) + 'km'); return `<div class="rk-row ${x.me ? 'me' : ''}"><span>${r}</span><span class="n">${esc(x.name)}</span><span class="d">${info}</span></div>`; }).join('');
   $('#app').classList.toggle('paused', modalOpen || speed === 0);
   if (lastPace !== st.pace){ lastPace = st.pace; $('#paceset').innerHTML = Object.entries(PACE).map(([k, p]) => `<button type="button" class="btn sm ${st.pace === k ? 'on' : ''}" data-pace="${k}">${p.name}</button>`).join(''); }
 }
@@ -1253,7 +1284,7 @@ function showModal({kick, title, body, choices, gauges}){
   const html = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">${kick ? `<div class="kick">${kick}</div>` : ''}<h3 id="mTitle">${title}</h3>${body || ''}${gauges ? `<div class="mini">${gaugeHTML()}</div>` : ''}<div class="mbtns">${choices.map((c, i) => `<button type="button" class="btn ${c.primary ? 'primary' : ''}" data-ch="${i}" ${c.disabled ? 'disabled' : ''}>${c.label}</button>`).join('')}</div></div></div>`;
   $('#modalRoot').innerHTML = html;
   $('#modalRoot').querySelectorAll('[data-ch]').forEach(b => b.addEventListener('click', () => { const c = choices[+b.dataset.ch]; closeModal(); const a = st ? snap() : null; c.act && c.act(); if (!st) return; clamp(st); const fx = a ? diffFx(a, snap()) : []; if (!st.dnf && (fx.length || lastLogText)) say(lastLogText, fx); renderRace(true); }));
-  const f = $('#modalRoot').querySelector('[data-ch]'); f && f.focus();
+  const f = $('#modalRoot').querySelector('[data-ch]'); f && f.focus({preventScroll:true});
 }
 function useItem(k){ if (st.inv[k] <= 0) return; st.inv[k]--; consume(st, ITEMS[k]); st.t += ITEMS[k].min; clamp(st); }
 function openSupply(auto){
@@ -1279,7 +1310,7 @@ function openSupply(auto){
       draw();
     }));
     $('#supDone').addEventListener('click', () => { closeModal(); if (used.length) say(used.join(', ') + ' 보급 완료. 다시 출발.', diffFx(supStart, snap())); renderRace(true); });
-    $('#supDone').focus();
+    $('#supDone').focus({preventScroll:true});
   };
   draw();
 }
