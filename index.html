@@ -180,6 +180,8 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .sumline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;padding:8px 10px;background:var(--card2);border:2px dashed var(--line);border-radius:10px}
 .sumline b{font-family:var(--display);font-weight:400;font-size:17px}
 .warn{color:var(--red)}
+.risk{display:block;font-family:var(--body);font-size:12px;margin-top:2px;color:var(--red)}
+.btn.primary .risk{color:#ffe1dc}
 .mbtns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .toast{position:fixed;left:50%;top:16px;transform:translateX(-50%) rotate(-1deg);z-index:30;background:var(--card);border:2px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--shadow);padding:8px 14px;font-family:var(--display);font-size:16px;max-width:calc(100% - 32px);text-align:center;transition:opacity .3s;pointer-events:none}
 
@@ -510,7 +512,10 @@ function chance(p){ return Math.random() < p; }
 // Casual wildlife & trail moments. modal:true ones ask for a choice.
 const FUN = [
   {id:'roe',   w:5, text:'노루가 길가에서 고개를 든다. 응원이라고 믿기로 했다.', M:6},
-  {id:'boar',  w:3, modal:true, title:'멧돼지 출현!', text:'숲에서 멧돼지가 코를 킁킁거리며 나타났다.', M:-8},
+  {id:'boar',  w:3, modal:true, title:'멧돼지 출현!', text:'숲에서 멧돼지가 코를 킁킁거리며 나타났다.', choices:[
+    {label:'조용히 뒷걸음질로 우회 (2분)', t:2, M:-4, log:'멧돼지를 피해 조용히 우회'},
+    {label:'소리 지르며 그냥 지나간다', primary:true, M:-6, Z:-15, log:'멧돼지에게 고함치며 통과. 잠은 확 깼다',
+     risk:{p:25, desc:'멧돼지 돌진', t:3, F:8, M:-10, log:'멧돼지가 돌진했다! 덤불로 몸을 날렸다. 3분 손해'}}]},
   {id:'crow',  w:3, text:'까마귀 떼가 나를 내려다본다. 평가하는 눈빛이다.', M:-3},
   {id:'dog',   w:3, text:'동네 강아지가 1km를 따라왔다. 최고의 페이서.', M:5, day:true},
   {id:'star',  w:3, text:'오름 위로 별똥별이 떨어졌다. 소원은 "다리 교체".', M:6, night:true},
@@ -535,10 +540,12 @@ const FUN = [
     {label:'참는다', M:-9, F:2, log:'쓸림을 참는 중. 카우보이 워크'}]},
   {id:'lace',  w:3, modal:true, title:'신발끈이 풀렸다', text:'숙이면 다시는 못 일어날 것 같은 예감.', choices:[
     {label:'숙여서 묶는다 (1분)', primary:true, t:1, F:2, log:'끈을 묶고 겨우 일어섰다'},
-    {label:'그냥 간다', M:-3, risk:'fall', log:'끈 풀린 채로 간다. 운명에 맡김'}]},
+    {label:'그냥 간다', M:-3, lace:true, log:'끈 풀린 채로 간다. 운명에 맡김',
+     risk:{p:30, desc:'끈 밟고 휘청', t:1, F:4, M:-4, log:'풀린 끈을 밟고 휘청했다. 결국 묶었다'}}]},
   {id:'cow',   w:2, low:true, modal:true, title:'길 막은 소', text:'목장 소가 길 한가운데 누워 있다. 비켜줄 생각이 전혀 없다.', choices:[
     {label:'빙 돌아간다 (2분)', t:2, log:'소를 피해 돌아감'},
-    {label:'"실례합니다" 하고 옆으로', primary:true, M:-3, log:'소에게 양해를 구하고 통과. 대답은 없었다'}]},
+    {label:'"실례합니다" 하고 바로 옆으로', primary:true, M:-2, log:'소에게 양해를 구하고 통과. 대답은 없었다',
+     risk:{p:20, desc:'소 뒷발질', t:2, F:6, M:-6, log:'소가 뒷발로 툭. 허벅지에 소 도장이 찍혔다'}}]},
   {id:'poo',   w:2, modal:true, title:'큰 거 신호', text:'배에서 천둥이 친다. 지금 아니면 늦는다.', choices:[
     {label:'오름 덤불로 (5분)', primary:true, t:5, S:-20, B:-100, M:-2, log:'덤불 속 해결. 휴지는 없었다. 나뭇잎은 많았다'},
     {label:'CP까지 참는다', hold:true, M:-6, log:'괄약근과 협상 중'}]}
@@ -1155,6 +1162,8 @@ function quip(force){
   el.innerHTML = '<span></span>'; el.querySelector('span').textContent = line;
 }
 
+function applyFx(c){ if (c.t) st.t += c.t; if (c.M) st.M += c.M; if (c.F) st.F += c.F; if (c.Z) st.Z += c.Z; if (c.S) st.S = Math.max(0, st.S + c.S); if (c.B) st.B = Math.max(0, st.B + c.B); }
+function riskText(r){ return [r.t ? r.t + '분 지연' : '', r.F ? '근피로 +' + r.F : '', r.M ? '멘탈 ' + r.M : ''].filter(Boolean).join(' · '); }
 // ---------- modals ----------
 function closeModal(){ $('#modalRoot').innerHTML = ''; modalOpen = false; lastT = performance.now(); const q = document.getElementById('quip'); if (q) q.classList.remove('float'); }
 function showModal({kick, title, body, choices, gauges}){
@@ -1231,15 +1240,17 @@ function handleEvent(ev){
   if (ev.type === 'fun'){
     const f = ev.f;
     if (!f.modal){ const a = snap(); st.M += f.M; if (f.F) st.F += f.F; if (f.carbs) ingest(st, {c:f.carbs, w:0, na:0, caf:0}); clamp(st); const fx = diffFx(a, snap()); say(f.text, fx); addLog(f.text); return; }
-    if (f.choices) return showModal({kick:'레이스 중 사건', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:f.choices.map(c => ({label:c.label, primary:c.primary, act(){
-      if (c.t) st.t += c.t; if (c.M) st.M += c.M; if (c.F) st.F += c.F; if (c.S) st.S = Math.max(0, st.S + c.S); if (c.B) st.B = Math.max(0, st.B + c.B); if (c.hold) st.holding = true;
-      if (c.risk === 'fall') st.lace = true; addLog(c.log); }}))});
+    if (f.choices) return showModal({kick:'레이스 중 사건', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:f.choices.map(c => ({
+      label: c.label + (c.risk ? `<span class="risk">${c.risk.p}% 확률로 ${c.risk.desc} · ${riskText(c.risk)}</span>` : ''), primary:c.primary, act(){
+      applyFx(c); if (c.hold) st.holding = true; if (c.lace) st.lace = true;
+      if (c.risk && Math.random() * 100 < c.risk.p){ applyFx(c.risk); lastLogText = ''; addLog(c.risk.log); }
+      else addLog(c.log); }}))});
     if (f.id === 'boar') return showModal({kick:'야생동물', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:[
       {label:'조용히 뒷걸음질 (2분)', act(){ st.t += 2; st.M -= 4; addLog('멧돼지를 피해 조용히 우회'); }},
       {label:'소리 지르며 지나간다', primary:true, act(){ st.M -= 8; st.F += 3; st.Z -= 15; addLog('멧돼지에게 고함치며 통과. 잠은 확 깼다'); }}]});
     if (f.id === 'lost') return showModal({kick:'길 찾기', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:[
       {label:'마지막 리본까지 되돌아간다 (6분)', act(){ st.t += 6; st.M -= 5; addLog('리본까지 되돌아감'); }},
-      {label:'GPS 확인 (2분, 운에 맡김)', primary:true, act(){ st.t += 2; if (Math.random() < 0.5){ st.t += 7; st.M -= 8; addLog('GPS를 믿었는데… 더 헤맸다. 7분 손해'); } else addLog('GPS 확인, 제 길이었다'); }}]});
+      {label:'GPS 확인 (2분)<span class="risk">50% 확률로 더 헤맴 · 7분 지연 · 멘탈 -8</span>', primary:true, act(){ st.t += 2; if (Math.random() < 0.5){ st.t += 7; st.M -= 8; addLog('GPS를 믿었는데… 더 헤맸다. 7분 손해'); } else addLog('GPS 확인, 제 길이었다'); }}]});
     return;
   }
   if (ev.type === 'supply') return openSupply(true);
