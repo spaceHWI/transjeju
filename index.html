@@ -1,7 +1,7 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="한라산을 넘는 148.8km. 보급과 CP 선택으로 가상 러너 100명 중 1위를 노리는 트레일러닝 시뮬레이션 게임.">
+<meta name="description" content="코믹 트랜스제주 시뮬레이터. 한라산을 넘는 148.8km, 젤·노상 볼일·멧돼지와 함께 가상 1위를 노리는 트레일러닝 게임.">
 <meta property="og:type" content="website"><meta property="og:site_name" content="트랜스제주 100마일 시뮬레이터">
-<meta property="og:title" content="트랜스제주 100마일 시뮬레이터"><meta property="og:description" content="한라산을 넘는 148.8km. 보급과 CP 선택으로 가상 1위를 노려 보세요.">
+<meta property="og:title" content="트랜스제주 100마일 시뮬레이터"><meta property="og:description" content="코믹 트랜스제주 시뮬레이터. 젤·노상 볼일·멧돼지와 함께 한라산 148.8km를 달려 가상 1위를 노려 보세요.">
 <meta property="og:url" content="https://spacehwi.github.io/transjeju/"><meta property="og:image" content="https://spacehwi.github.io/transjeju/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="트랜스제주 100마일 시뮬레이터"><meta name="twitter:image" content="https://spacehwi.github.io/transjeju/og.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="theme-color" content="#f2c230">
@@ -102,6 +102,8 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .mapbox svg{display:block;width:100%;height:auto}
 .quip{position:absolute;left:50%;top:12px;transform:translateX(-50%) rotate(-1deg);max-width:min(78%,520px);background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--shadow);padding:7px 14px;font-family:var(--display);font-size:16px;line-height:1.3;text-align:center;pointer-events:none;z-index:2}
 .quip::after{content:'';position:absolute;left:50%;bottom:-9px;width:14px;height:14px;background:var(--card);border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:translateX(-50%) rotate(45deg)}
+.quip .fxs{justify-content:center;margin-top:5px}
+.quip.event{background:#fff1b8}
 .quip.pop{animation:quipIn .35s ease-out}
 @keyframes quipIn{from{opacity:0;transform:translateX(-50%) translateY(-8px) rotate(-3deg)}to{opacity:1;transform:translateX(-50%) rotate(-1deg)}}
 @media (max-width:560px){.quip{font-size:13px;padding:5px 10px;max-width:88%}}
@@ -213,14 +215,13 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
   .cplist{grid-template-columns:minmax(0,1fr)}
 }
 </style>
-<script src="firebase-config.js"></script></head><body>
-<div class="app" id="app">
+<script src="firebase-config.js"></script></head><body><div class="app" id="app">
 
 <!-- ============ SETUP ============ -->
 <section id="scrSetup" style="display:flex;flex-direction:column;gap:16px">
   <header class="hero">
     <div>
-      <div class="lbl">TRANSJEJU 100M · 가상 레이스</div>
+      <div class="lbl">코믹 트랜스제주 시뮬레이터 · 가상 레이스</div>
       <h1>트랜스제주 <b>100마일</b> 시뮬레이터</h1>
       <p>금요일 밤 9시 제주월드컵경기장 출발. 한라산 정상을 넘어 동쪽 들판과 숲을 돌아 다시 경기장으로. 보급과 CP 선택으로 가상 1위를 노리세요.</p>
     </div>
@@ -312,8 +313,7 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 </div>
 <div id="modalRoot"></div>
 <div class="toast" id="toast" style="opacity:0"></div>
-<script>
-/*CORE*/
+<script>/*CORE*/
 // ---------- course data (TransJeju 100M, 148.8 km) ----------
 const START_CLOCK = 21 * 60; // Fri 21:00
 const STEP = 0.1;
@@ -509,7 +509,7 @@ const FUN = [
   {id:'snake', w:2, text:'발밑에서 뱀이 스르륵. 심장이 먼저 결승선에 갔다.', M:-6, day:true},
   {id:'cheer', w:3, text:'응원단이 내 이름을 불렀다. 배번을 읽은 거지만 감동이다.', M:8, low:true},
   {id:'lost',  w:2, modal:true, title:'리본이 안 보인다', text:'한참 리본을 못 봤다. 길을 잘못 들었나?', M:-5},
-  {id:'rain',  w:2, text:'비가 쏟아진다. 신발이 수족관이 됐다.', M:-4},
+  {id:'rain',  w:2, text:'비가 쏟아진다. "비는 받아들여라." 받아들일 수밖에 없다.', M:-4},
   {id:'horse', w:2, text:'목장의 말이 같이 뛰어 준다. 말이 더 잘 뛴다.', M:4, low:true},
   {id:'cat',   w:2, text:'CP 앞 고양이가 내 바나나를 노린다.', M:3, low:true},
   {id:'owl',   w:2, text:'부엉이가 운다. 무서운 건지 졸린 건지 모르겠다.', M:-2, night:true},
@@ -535,9 +535,10 @@ const FUN = [
 ];
 function pickFun(st){
   const hc = clockHour(st.t), night = hc >= 19.5 || hc < 6, ele = elevAt(st.km);
-  const pool = FUN.filter(f => !(f.day && night) && !(f.night && !night) && !(f.high && ele < 900) && !(f.low && ele > 700) && !(f.sleepy && st.Z < 50) && !(f.late && st.km < 100));
+  st.funSeen = st.funSeen || {};
+  const pool = FUN.filter(f => (st.funSeen[f.id] || 0) < (f.modal ? 1 : 2) && !(f.day && night) && !(f.night && !night) && !(f.high && ele < 900) && !(f.low && ele > 700) && !(f.sleepy && st.Z < 50) && !(f.late && st.km < 100));
   let r = Math.random() * pool.reduce((a, f) => a + f.w, 0);
-  for (const f of pool){ r -= f.w; if (r <= 0) return f; }
+  for (const f of pool){ r -= f.w; if (r <= 0){ st.funSeen[f.id] = (st.funSeen[f.id] || 0) + 1; return f; } }
   return null;
 }
 function rollEvents(st, km){
@@ -549,7 +550,7 @@ function rollEvents(st, km){
   if (st.F > 35 && !st.blister && ok('blister') && chance(0.002*(1.6 - 0.05*s.dur))){ st.blister = true; st.cd.blister = km + 10; return {type:'blister'}; }
   if (st.E < 8 && ok('bonk')){ st.cd.bonk = km + 3; return {type:'bonk'}; }
   if (st.M < 4 && ok('quit')){ st.cd.quit = km + 6; return {type:'quit'}; }
-  if (ok('fun') && chance(0.035)){ st.cd.fun = km + 1.3; const f = pickFun(st); if (f) return {type:'fun', f}; }
+  if (ok('fun') && chance(0.02)){ st.cd.fun = km + 2; const f = pickFun(st); if (f) return {type:'fun', f}; }
   return null;
 }
 const SCENIC = [
@@ -576,7 +577,7 @@ function advance(st, dtMin){
     for (const sc of SCENIC) if (st.km >= sc.km && !st.flags[sc.id]){ st.flags[sc.id] = true; st.M += sc.M; clamp(st); return {type:'scenic', text:sc.text}; }
     if (hitCP) return {type:'cp', idx: st.seg + 1};
     for (let m = Math.floor(k0*10) + 1; m <= Math.floor(st.km*10); m++){ const ev = rollEvents(st, m/10); if (ev) return ev; }
-    if (st.t >= st.nextSupply){ st.nextSupply = st.t + 30 + Math.random()*12; if (st.km < TOTAL_KM - 2) return {type:'supply'}; }
+    if (st.t >= st.nextSupply){ st.nextSupply = st.t + 38 + Math.random()*12; if (st.km < TOTAL_KM - 2) return {type:'supply'}; }
   }
   return null;
 }
@@ -598,7 +599,7 @@ const FOOD = {
   noodle:  {name:'컵라면',        min:5, c:50, w:350, na:1500, caf:0,  hint:'탄수 50g · 국물 350ml · 나트륨 1500mg', fx:st => { st.M += 10; }},
   coffee:  {name:'커피',          min:1, c:0,  w:150, na:0,    caf:80, hint:'카페인 80mg'},
   toilet:  {name:'화장실',        min:3, c:0,  w:0,   na:0,    caf:0,  hint:'화장실 비우기 · 속 편하게', fx:st => { st.B = 0; st.S = Math.max(0, st.S - 15); st.holding = false; if (Math.random() < 0.3){ st.t += 4; st.M -= 3; st.note = '간이화장실 줄이 7명. 다들 같은 표정이다. 4분 대기.'; } }},
-  rest:    {name:'의자에 앉아 쉬기', min:5, c:0, w:0, na:0,    caf:0,  hint:'멘탈↑ 근피로 조금↓', fx:st => { st.F -= 3; st.M += 8; st.Z += 3; }},
+  rest:    {name:'의자에 앉아 쉬기', min:5, c:0, w:0, na:0,    caf:0,  hint:'멘탈↑ · "의자를 조심하라"', fx:st => { st.F -= 3; st.M += 8; st.Z += 3; }},
   dropbag: {name:'드롭백 재보급', min:3, c:0,  w:0,   na:0,    caf:0,  hint:'보급품 충전 — 젤 8·카페인젤 2·바 2·소금 8', crew:true, fx:st => { st.inv = {...KIT, water: st.inv.water}; }},
   socks:   {name:'양말·신발 교체', min:6, c:0, w:0,   na:0,    caf:0,  hint:'물집 해결', crew:true, fx:st => { st.blister = false; st.F -= 2; st.M += 5; }},
   nap:     {name:'파워냅 15분',   min:15, c:0, w:0,   na:0,    caf:0,  hint:'졸음 리셋·멘탈↑↑', crew:true, fx:st => { st.Z = 5; st.M += 15; }},
@@ -939,9 +940,20 @@ function statusTags(){
   const hc = clockHour(st.t); if (hc >= 19.5 || hc < 6) t.push('야간 · 헤드랜턴');
   return t.map(x => `<span class="tag">${x}</span>`).join('');
 }
-function addLog(text){ st.log.unshift(fmtClock(st.t).slice(2) + '  ' + text); st.log.length = Math.min(st.log.length, 6); $('#log').innerHTML = st.log.map(l => `<div>${esc(l)}</div>`).join(''); }
+let lastLogText = '';
+function addLog(text){ lastLogText = text; st.log.unshift(fmtClock(st.t).slice(2) + '  ' + text); st.log.length = Math.min(st.log.length, 6); $('#log').innerHTML = st.log.map(l => `<div>${esc(l)}</div>`).join(''); }
 let toastT = 0;
-function toast(text){ const el = $('#toast'); el.textContent = text; el.style.opacity = 1; clearTimeout(toastT); toastT = setTimeout(() => el.style.opacity = 0, 2600); }
+// All race messages go to the speech bubble above the map; stat changes appear as coloured chips.
+let sayUntil = 0;
+function say(text, fx){
+  const el = document.getElementById('quip'); if (!el) return;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  el.classList.toggle('event', !!(fx && fx.length) || !!text);
+  el.innerHTML = `<span></span>${fx && fx.length ? `<div class="fxs">${fxChips(fx)}</div>` : ''}`;
+  el.querySelector('span').textContent = text || '';
+  sayUntil = performance.now() + 7000; quipLast = performance.now();
+}
+function toast(text, fx){ say(text, fx); }
 function standings(){
   const list = rivals.map((r, i) => ({ name: r.name, km: rivalKm(r, st.t), fin: st.t >= r.target ? r.target : null, rival: i }));
   list.push({ name: me.name, km: st.km, fin: finished ? st.t : null, me: true });
@@ -1068,26 +1080,27 @@ function previewFx(keys){
 
 // ---------- runner monologue (black comedy) ----------
 const QUIPS = {
-  bonk:  ['몸이 배터리 1%에서 업데이트를 하겠냐고 묻는다.','젤 하나에 영혼을 팔 수 있다. 시세는 많이 떨어졌지만.','다리가 파업 중. 요구사항은 탄수화물 하나.','방금 내 그림자가 나를 추월했다.'],
-  dry:   ['땀이 안 난다. 몸이 수분을 사치품으로 분류했다.','입안이 현무암이다. 구멍까지 똑같다.','물 생각을 너무 해서 바다가 맛있어 보인다.'],
-  salt:  ['종아리가 쥐 날 타이밍을 재고 있다. 눈치가 보인다.','몸에서 소금기가 빠져나간다. 이제 싱거운 사람이 됐다.'],
-  gut:   ['위장이 오늘부로 퇴사 의사를 밝혔다.','지금 방귀는 도박이다. 판돈이 너무 크다.','배 속에서 젤들이 회의 중. 결론은 \'밖으로\'.','먹은 게 다 위에 줄 서 있다. 소화 대기 번호 37번.'],
-  legs:  ['허벅지가 내 이름을 모른다고 한다.','무릎이 유언장을 쓰고 있다. 상속자는 정형외과.','다리가 내 말을 안 듣는다. 원래도 안 들었지만.'],
-  sleep: ['방금 돌하르방이 나한테 인사했다. 아마도.','눈 뜨고 자는 법을 터득했다. 달리는 건 몸이 알아서 한다.','나무가 사람처럼 보인다. 사람이 나무처럼 보이면 더 큰일이다.'],
-  pee:   ['화장실 생각뿐이다. 인생 우선순위 정리 완료.','방광이 컷오프보다 먼저 온다.','적당한 덤불을 찾는 눈이 독수리처럼 예리해졌다.','방광이 나보다 먼저 결승선에 가려고 한다.'],
-  mind:  ['왜 돈 내고 이걸 하고 있지? 그것도 추첨까지 해서.','완주 메달은 결국 서랍에 들어간다. 알면서도 간다.','다음 생엔 그냥 귤 농사 짓는다.'],
+  bonk:  ['"울트라는 풍경 좀 곁들인 먹기 대회다." 나는 지금 그 대회에서 지는 중.','"일단 먹어라." 기권 이유 1순위는 안 먹어서라던데.','다리가 파업 중. 요구사항은 탄수화물 하나.','방금 내 그림자가 나를 추월했다.'],
+  dry:   ['"목마르기 전에 마셔라." 이미 늦었다.','입안이 현무암이다. 구멍까지 똑같다.','물 생각을 너무 해서 바다가 맛있어 보인다.'],
+  salt:  ['종아리가 쥐 날 타이밍을 재고 있다. 눈치가 보인다.','땀에서 소금꽃이 핀다. 몸이 소금을 수출 중이다.'],
+  gut:   ['울트라 제1법칙: 방귀를 믿지 마라.','위장이 오늘부로 퇴사 의사를 밝혔다.','먹은 게 다 위에 줄 서 있다. 소화 대기 번호 37번.'],
+  legs:  ['"무릎은 소모품이다." 오늘 많이 소모하는 중.','허벅지가 내 이름을 모른다고 한다.','다리가 내 말을 안 듣는다. 원래도 안 들었지만.'],
+  sleep: ['방금 돌하르방이 나한테 인사했다. 아마도.','눈 뜨고 자는 법을 터득했다. 달리는 건 몸이 알아서 한다.','"걷다가 졸면 걷는 게 아니다." 누가 한 말인지 기억도 안 난다.'],
+  pee:   ['"덤불은 아무도 판단하지 않는다." 울트라 격언이다. 덤불 물색 중.','방광이 컷오프보다 먼저 온다.','적당한 덤불을 찾는 눈이 독수리처럼 예리해졌다.'],
+  mind:  ['"항상 나빠지기만 하는 건 아니다." 선배들 말이다. 믿어 보자.','"집에 있는 사람들은 지금 소파에서 피자 먹는다." 이 생각은 도움이 안 된다.','"DNF가 DNS보다 낫다." 그래도 DNF는 싫다.','힘들 땐 내 장례식을 상상하라는 조언이 있다. 조문객이 생각보다 적다.','"그만둘 거면 의자에 10분 앉아 보고 결정해라." …의자가 없다.'],
   blister:['발바닥 물집이 자기 동네를 만들었다. 이장도 뽑았다.','한 걸음마다 발이 나한테 리뷰를 남긴다. 별 한 개.'],
   hold:  ['참는 중. 이건 레이스가 아니라 수행이다.','지금 이 순간, 표정 관리가 제일 어려운 종목이다.'],
   cramp: ['종아리가 독립선언을 했다.','근육이 돌처럼 굳었다. 제주답다.'],
-  cutoff:['컷오프가 뒤에서 숨을 쉰다. 입냄새까지 느껴진다.','시계를 보면 안 된다. 시계도 나를 안 보고 싶어 한다.'],
-  up:    ['오르막이 끝나면 더 큰 오르막이 있다. 한라산은 거짓말을 안 한다.','방금 등산객이 나를 추월했다. 그분은 지팡이를 짚었다.','오르막에서 뛰는 척하는 중. 아무도 속지 않는다.'],
+  cutoff:['컷오프가 뒤에서 숨을 쉰다. 입냄새까지 느껴진다.','"시계는 거짓말을 한다." 제발 이번엔 거짓말이길.'],
+  up:    ['"오르막은 걷는 거다. 걷는 건 반칙이 아니다."','방금 등산객이 나를 추월했다. 그분은 지팡이를 짚었다.','오르막에서 뛰는 척하는 중. 아무도 속지 않는다.'],
   down:  ['중력은 공짜인데 무릎값은 내가 낸다.','내리막에서 넘어지면 빠르긴 하다.'],
-  night: ['헤드랜턴 불빛 안에서만 세상이 존재한다. 철학 아님, 그냥 졸림.','어둠 속에서 뭔가 반짝인다. 노루 눈이거나, 환각이거나.'],
-  front: ['내가 상위권? 다들 길을 잃은 게 분명하다.','앞에 아무도 없다. 길을 잘못 든 건 아니겠지.'],
-  back:  ['뒤에서 1등 노리는 중. 경쟁이 치열하지 않아 유리하다.','앞사람 헤드랜턴이 별처럼 멀다.'],
+  night: ['헤드랜턴 불빛 안에서만 세상이 존재한다.','앞 주자 헤드랜턴만 따라가는 중. 저 사람도 길 모르면 끝이다.','밤공기가 차다. 바람막이를 꺼낼까 말까 10분째 고민 중.','리본 반사판이 반짝일 때마다 안심한다.'],
+  nightLate: ['헤드랜턴 불빛 안에서만 세상이 존재한다. 철학 아님, 그냥 졸림.','어둠 속에서 뭔가 반짝인다. 노루 눈이거나, 환각이거나.','두 번째 밤이다. 몸이 "이거 어제도 했잖아"라고 항의한다.'],
+  front: ['"추월할 땐 겸손하게." 숨 헐떡이며 겸손 연기 중.','내가 상위권? 다들 길을 잃은 게 분명하다.'],
+  back:  ['뒤에서 1등 노리는 중. 경쟁이 치열하지 않아 유리하다.','"남과 비교하지 마라." 비교할 사람도 안 보인다.'],
   push:  ['밀어붙이는 중. 미래의 나에게 청구서를 보내는 중.','지금 신나는 건 나중의 내가 갚는다.'],
-  easy:  ['아끼는 중. 뭘 아끼는지는 나도 모른다.','천천히 가는 것도 전략이다. 라고 나에게 말해 주는 중.'],
-  fine:  ['아직 괜찮다. 이 문장을 몇 시간 뒤에 후회할 예정.','기분이 좋다. 분명 뭔가 잘못됐다는 신호다.','148.8km라니. 차로 가도 멀다.','제주 바람이 응원해 준다. 아니, 그냥 맞바람이다.','오늘의 목표: 살아서 경기장 보기.']
+  easy:  ['아끼는 중. 뭘 아끼는지는 나도 모른다.','"초반에 아끼면 후반에 웃는다." 라고 나에게 말해 주는 중.'],
+  fine:  ['"지금 이 1마일만 달려라." 남은 건 140km 넘지만.','"계획은 덜, 적응은 더." 계획은 출발선에서 이미 무너졌다.','아직 괜찮다. 이 문장을 몇 시간 뒤에 후회할 예정.','다들 출발할 때 너무 빨랐다. 나도 그랬다.','제주 바람이 응원해 준다. 아니, 그냥 맞바람이다.','"레이스 날엔 새로운 건 금지." 새 양말 신고 왔다.']
 };
 let quipLast = 0, quipKey = '', quipRecent = [];
 function quipCandidates(){
@@ -1098,7 +1111,7 @@ function quipCandidates(){
   if (st.S > 70) c.push(['gut', 7]); if (st.H < 30) c.push(['dry', 7]); if (st.Z > 65) c.push(['sleep', 6]);
   if (st.B > 80) c.push(['pee', 6]); if (st.F > 65) c.push(['legs', 5]); if (st.Na < 25) c.push(['salt', 5]); if (st.blister) c.push(['blister', 4]);
   if (g > 0.1) c.push(['up', 3]); if (g < -0.1) c.push(['down', 3]);
-  if (hc >= 21 || hc < 5) c.push(['night', 2]);
+  if (hc >= 21 || hc < 5) c.push([st.t > 1200 ? 'nightLate' : 'night', 2]);
   const sd = standings(), r = sd.findIndex(x => x.me) + 1;
   if (r <= 5 && st.km > 3) c.push(['front', 2]); if (r > sd.length * 0.7) c.push(['back', 2]);
   if (st.pace === 'push') c.push(['push', 2]); if (st.pace === 'easy') c.push(['easy', 1]);
@@ -1107,6 +1120,7 @@ function quipCandidates(){
 }
 function quip(force){
   const now = performance.now();
+  if (now < sayUntil) return;
   const c = quipCandidates(), top = c[0][0];
   if (!force && top === quipKey && now - quipLast < 16000) return;
   if (!force && now - quipLast < 5000) return;
@@ -1115,8 +1129,8 @@ function quip(force){
   quipRecent.push(line); if (quipRecent.length > 8) quipRecent.shift();
   quipKey = top; quipLast = now;
   const el = document.getElementById('quip'); if (!el) return;
-  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-  el.querySelector('span').textContent = line;
+  el.classList.remove('pop', 'event'); void el.offsetWidth; el.classList.add('pop');
+  el.innerHTML = '<span></span>'; el.querySelector('span').textContent = line;
 }
 
 // ---------- modals ----------
@@ -1125,31 +1139,31 @@ function showModal({kick, title, body, choices, gauges}){
   modalOpen = true;
   const html = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">${kick ? `<div class="kick">${kick}</div>` : ''}<h3 id="mTitle">${title}</h3>${body || ''}${gauges ? `<div class="mini">${gaugeHTML()}</div>` : ''}<div class="mbtns">${choices.map((c, i) => `<button type="button" class="btn ${c.primary ? 'primary' : ''}" data-ch="${i}" ${c.disabled ? 'disabled' : ''}>${c.label}</button>`).join('')}</div></div></div>`;
   $('#modalRoot').innerHTML = html;
-  $('#modalRoot').querySelectorAll('[data-ch]').forEach(b => b.addEventListener('click', () => { const c = choices[+b.dataset.ch]; closeModal(); const a = st ? snap() : null; c.act && c.act(); if (!st) return; clamp(st); const fx = a ? diffFx(a, snap()) : []; if (fx.length && !st.dnf) toast(fxText(fx)); renderRace(true); }));
+  $('#modalRoot').querySelectorAll('[data-ch]').forEach(b => b.addEventListener('click', () => { const c = choices[+b.dataset.ch]; closeModal(); const a = st ? snap() : null; c.act && c.act(); if (!st) return; clamp(st); const fx = a ? diffFx(a, snap()) : []; if (!st.dnf && (fx.length || lastLogText)) say(lastLogText, fx); renderRace(true); }));
   const f = $('#modalRoot').querySelector('[data-ch]'); f && f.focus();
 }
 function useItem(k){ if (st.inv[k] <= 0) return; st.inv[k]--; consume(st, ITEMS[k]); st.t += ITEMS[k].min; clamp(st); }
 function openSupply(auto){
   modalOpen = true;
   const flavor = ['숨을 고르며 주머니를 뒤진다.','오르막 전에 뭐라도 넣어 둘까?','발걸음을 늦추고 보급 타이밍.','목이 마르다. 뭐부터 먹지?'];
-  const used = []; let last = null;
+  const used = []; let last = null, joke = ''; const supStart = snap();
   const draw = () => {
     const opts = Object.entries(ITEMS).map(([k, it]) => `<button type="button" class="opt ${recommend(st, k) ? 'rec' : ''}" data-it="${k}" ${st.inv[k] <= 0 ? 'disabled' : ''}>${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k)}<span class="ot"><span class="on">${it.name}</span><span class="oh">${it.hint}</span></span><span class="cnt">${st.inv[k]}</span></button>`).join('')
       + (st.B > 45 ? `<button type="button" class="opt ${recommend(st, 'pee') ? 'rec' : ''}" data-it="pee">${recommend(st, 'pee') ? '<span class="recb">추천</span>' : ''}${iconSVG('pee')}<span class="ot"><span class="on">노상 볼일</span><span class="oh">화장실 비우기 · 1.5분</span></span></button>` : '');
     $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">${st.km.toFixed(1)} km · ${fmtClock(st.t)}</div><h3 id="mTitle">${auto ? '보급 타이밍' : '보급 꺼내기'}</h3>
-      ${last ? `<div class="fxline" role="status">${iconSVG(last.k, 28)}<div><b>${last.name}</b> 먹음<div class="fxs">${fxChips(last.fx) || '<span class="fx">변화 없음</span>'}</div></div></div>` : `<p>${auto ? flavor[Math.floor(st.km) % flavor.length] : '걸으면서 주머니에서 꺼내 먹어요.'}</p>`}
+      ${last ? `<div class="fxline" role="status">${iconSVG(last.k, 28)}<div><b>${last.name}</b> ${last.k === 'pee' ? '해결' : '먹음'}${last.joke ? `<div style="margin-top:2px">${esc(last.joke)}</div>` : ''}<div class="fxs">${fxChips(last.fx) || '<span class="fx">변화 없음</span>'}</div></div></div>` : `<p>${auto ? flavor[Math.floor(st.km) % flavor.length] : '걸으면서 주머니에서 꺼내 먹어요.'}</p>`}
       ${eatMult(st) > 1 ? `<div class="sumline warn">연속으로 먹는 중 — 다음 보급은 위장 부담 <b class="num">×${eatMult(st).toFixed(1)}</b></div>` : ''}<div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div><div class="mbtns"><button type="button" class="btn primary" id="supDone">${used.length ? '계속 달리기' : '패스하고 달리기'}</button></div></div></div>`;
     $('#modalRoot').querySelectorAll('[data-it]').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.it, a = snap();
-      if (k === 'pee'){ st.B = 0; st.t += 1.5; st.M -= 1; const hc = clockHour(st.t); if ((hc >= 19.5 || hc < 6) && Math.random() < 0.4){ st.M -= 2; toast('볼일 중 뒤 주자 헤드랜턴 다섯 개가 나를 비췄다. 무대 데뷔.'); addLog('헤드랜턴 조명 아래 노상 볼일'); } else if (Math.random() < 0.25){ toast('바람 방향을 잘못 읽었다. 신발이 조금 젖었다.'); st.M -= 2; } }
+      if (k === 'pee'){ st.B = 0; st.t += 1.5; st.M -= 1; const hc = clockHour(st.t); if ((hc >= 19.5 || hc < 6) && Math.random() < 0.4){ st.M -= 2; joke = '볼일 중 뒤 주자 헤드랜턴 다섯 개가 나를 비췄다. 무대 데뷔.'; } else if (Math.random() < 0.25){ joke = '바람 방향을 잘못 읽었다. 신발이 조금 젖었다.'; st.M -= 2; } }
       else useItem(k);
       clamp(st);
       const name = k === 'pee' ? '노상 볼일' : ITEMS[k].name, fx = diffFx(a, snap());
-      used.push(name); last = {k, name, fx};
+      used.push(name); last = {k, name, fx, joke}; if (joke) addLog(joke); joke = '';
       addLog(name + (fx.length ? ' — ' + fxText(fx) : ''));
       draw();
     }));
-    $('#supDone').addEventListener('click', () => { closeModal(); renderRace(true); });
+    $('#supDone').addEventListener('click', () => { closeModal(); if (used.length) say((last && last.joke) || (used.join(', ') + ' 먹고 다시 출발'), diffFx(supStart, snap())); renderRace(true); });
     $('#supDone').focus();
   };
   draw();
@@ -1180,7 +1194,7 @@ function arriveCP(idx){
     const a = snap();
     for (const k of list){ consume(st, FOOD[k]); st.t += FOOD[k].min; }
     clamp(st); const fx = diffFx(a, snap());
-    if (st.note){ toast(st.note); addLog(st.note); st.note = null; } else if (list.length && fx.length) toast(`CP${idx} 보급 효과 — ${fxText(fx)}`);
+    if (st.note){ say(st.note, fx); addLog(st.note); st.note = null; } else if (list.length) say(`CP${idx} ${cp.short}에서 ${list.map(k => FOOD[k].name).join(', ')}`, fx); else say(`CP${idx} ${cp.short} 통과. 쿨하게.`, []);
     clamp(st); st.splits[st.splits.length - 1].dep = st.t; st.stopMin += st.t - arr;
     closeModal();
     if (st.t > cp.cut){ st.dnf = {where: cp.name, why: `${cp.name}에서 오래 머물러 컷오프(${fmtClock(cp.cut)})를 넘겼어요.`}; return endRace(); }
@@ -1193,7 +1207,7 @@ function handleEvent(ev){
   if (ev.type === 'scenic'){ toast(ev.text); addLog(ev.text); return; }
   if (ev.type === 'fun'){
     const f = ev.f;
-    if (!f.modal){ const a = snap(); st.M += f.M; if (f.F) st.F += f.F; if (f.carbs) ingest(st, {c:f.carbs, w:0, na:0, caf:0}); clamp(st); const fx = diffFx(a, snap()); toast(f.text + (fx.length ? ' (' + fxText(fx) + ')' : '')); addLog(f.text); return; }
+    if (!f.modal){ const a = snap(); st.M += f.M; if (f.F) st.F += f.F; if (f.carbs) ingest(st, {c:f.carbs, w:0, na:0, caf:0}); clamp(st); const fx = diffFx(a, snap()); say(f.text, fx); addLog(f.text); return; }
     if (f.choices) return showModal({kick:'레이스 중 사건', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:f.choices.map(c => ({label:c.label, primary:c.primary, act(){
       if (c.t) st.t += c.t; if (c.M) st.M += c.M; if (c.F) st.F += c.F; if (c.S) st.S = Math.max(0, st.S + c.S); if (c.B) st.B = Math.max(0, st.B + c.B); if (c.hold) st.holding = true;
       if (c.risk === 'fall') st.lace = true; addLog(c.log); }}))});
@@ -1202,7 +1216,7 @@ function handleEvent(ev){
       {label:'소리 지르며 지나간다', primary:true, act(){ st.M -= 8; st.F += 3; st.Z -= 15; addLog('멧돼지에게 고함치며 통과. 잠은 확 깼다'); }}]});
     if (f.id === 'lost') return showModal({kick:'길 찾기', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:[
       {label:'마지막 리본까지 되돌아간다 (6분)', act(){ st.t += 6; st.M -= 5; addLog('리본까지 되돌아감'); }},
-      {label:'GPS 확인 (2분, 운에 맡김)', primary:true, act(){ st.t += 2; if (Math.random() < 0.5){ st.t += 7; st.M -= 8; addLog('GPS를 믿었다가 더 헤맸다'); toast('GPS를 믿었는데… 더 헤맸다. 7분 손해.'); } else addLog('GPS 확인, 제 길이었다'); }}]});
+      {label:'GPS 확인 (2분, 운에 맡김)', primary:true, act(){ st.t += 2; if (Math.random() < 0.5){ st.t += 7; st.M -= 8; addLog('GPS를 믿었는데… 더 헤맸다. 7분 손해'); } else addLog('GPS 확인, 제 길이었다'); }}]});
     return;
   }
   if (ev.type === 'supply') return openSupply(true);
