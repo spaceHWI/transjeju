@@ -124,6 +124,22 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .intake .im .gl span:last-child{color:var(--muted);font-size:12px}
 .tg{font-style:normal;font-size:11px;border:1.5px solid var(--ink);border-radius:6px;padding:0 5px;margin-left:3px}
 .tg.ok{background:#cfe6a8}.tg.low{background:#fbe39a}.tg.bad{background:#f3c1bb}.tg.over{background:#f6c99a}
+.ech{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+.ech i{font-style:normal;font-family:var(--display);font-size:11px;line-height:1.2;border:1.2px solid var(--ink);border-radius:6px;padding:1px 5px;background:var(--card2)}
+.ech i.up{background:#cfe6a8}.ech i.nt{background:#efe7d4;color:var(--muted)}
+.opt .on small{font-family:var(--body);font-size:11px;color:var(--muted)}
+.stom{display:flex;flex-direction:column;gap:4px;padding-bottom:6px;border-bottom:2px dashed var(--line)}
+.stom .gl{display:flex;justify-content:space-between;gap:6px;font-family:var(--display);font-size:14px}
+.stom .gl span:last-child{color:var(--muted);font-size:12px}
+.sbar{position:relative;height:16px;border:2px solid var(--ink);border-radius:9px;background:var(--card);overflow:hidden}
+.sbar i{position:absolute;left:0;top:0;bottom:0;background:repeating-linear-gradient(135deg,#f2c230 0 6px,#f6d25c 6px 12px);transition:width .3s}
+.sbar b{position:absolute;top:0;bottom:0;background:rgba(127,174,78,.25);border-left:2px dashed var(--ink);border-right:2px dashed var(--ink)}
+.sbar span{position:absolute;top:0;bottom:0;right:0;background:rgba(185,50,42,.18)}
+.flow{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.flow i{font-style:normal;font-family:var(--display);font-size:11.5px;border:1.2px solid var(--ink);border-radius:6px;padding:1px 6px}
+.flow i.up{background:#cfe6a8}.flow i.dn{background:#f3c1bb}
+.absorb{font-weight:400;font-size:11px;color:#4f8f3a;animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.35}}
 .tbar{position:relative;height:14px;margin-top:3px;border:2px solid var(--ink);border-radius:8px;background:linear-gradient(90deg,#f3c1bb 0,#fbe39a 30%,#fbf8f1 50%,#fbe39a 70%,#f6c99a 100%)}
 .tbar b{position:absolute;top:0;bottom:0;background:#9cc65e;border-left:2px solid var(--ink);border-right:2px solid var(--ink)}
 .tbar i{position:absolute;top:-6px;width:0;height:0;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--ink);transition:left .3s}
@@ -843,7 +859,7 @@ function buildMap(){
   { const sc = 0.16, ix = MW - 0.82 * VIEW.kx * VIEW.s * sc - 26, iy = MH - 0.4 * VIEW.ky * VIEW.s * sc - 26, ins = COAST.map(p => [ix + (p[1] - 126.15) * VIEW.kx * VIEW.s * sc, iy + (33.575 - p[0]) * VIEW.ky * VIEW.s * sc]);
     const vx = ix + (VIEW.lon0 - 126.15) * VIEW.kx * VIEW.s * sc, vy = iy + (33.575 - VIEW.lat0) * VIEW.ky * VIEW.s * sc;
     s += `<g filter="url(#liftS)"><rect x="${ix - 8}" y="${iy - 8}" width="${(0.82 * VIEW.kx * VIEW.s * sc) + 16}" height="${(0.4 * VIEW.ky * VIEW.s * sc) + 16}" rx="10" fill="#fbf8f1" stroke="#2b2420" stroke-width="2"/></g><path d="${smoothClosed(ins)}" fill="#c6d58a" stroke="#2b2420" stroke-width="1.4"/><rect x="${vx}" y="${vy}" width="${MW * sc}" height="${MH * sc}" fill="none" stroke="#b9322a" stroke-width="2" stroke-dasharray="4 3"/>`; }
-  s += `</svg><div class="quip" id="quip" aria-live="polite"><span>출발선. 다들 쓸데없이 상쾌해 보인다.</span></div><div class="mapchips"><span class="chip" id="chipRank">순위 -</span><span class="chip" id="chipKm">0.0 km</span><span class="chip" id="chipEle">47 m</span><span class="chip" id="chipSlope">▶ 평지</span></div>`;
+  s += `</svg><div class="quip" id="quip" aria-live="polite"><span>${esc(QUIPS.start[Math.floor(Math.random() * QUIPS.start.length)])}</span></div><div class="mapchips"><span class="chip" id="chipRank">순위 -</span><span class="chip" id="chipKm">0.0 km</span><span class="chip" id="chipEle">47 m</span><span class="chip" id="chipSlope">▶ 평지</span></div>`;
   $('#mapbox').innerHTML = s;
   // tokens
   const rd = $('#rivalDots');
@@ -938,12 +954,29 @@ $('#cplist').innerHTML = CPS.slice(1).map((c, i) => `<span>${i + 1 === 12 ? 'F' 
 // ---------- race ----------
 let running = false, lastPace = '', st = null, rivals = [], speed = 1, modalOpen = false, lastT = 0, raf = 0, lastRender = 0, finished = false;
 const GAME_MIN_PER_SEC = 6;
-const GAUGES = [['E','에너지',0],['H','수분',0],['Na','전해질',0],['M','멘탈',0],['S','위 속 탄수',1],['F','근피로',1],['Z','졸음',1],['B','화장실',1]];
+const GAUGES = [['E','에너지',0],['H','수분',0],['Na','전해질',0],['M','멘탈',0],['F','근피로',1],['Z','졸음',1],['B','화장실',1]];
 const TARGETS = [['c','탄수화물','g',50,70],['w','수분','ml',450,750],['na','나트륨','mg',300,600]];
 // Target band sits in the middle of each bar (scale 0 .. lo+hi), with a pin for the last-60-minute rate.
+function stomachState(){
+  if (st.S < 8) return ['텅 빔 · 곧 배고픔', 'bad'];
+  if (st.S < 30) return ['소화 중 · 여유 있음', 'ok'];
+  if (st.S < 60) return ['소화 중 · 꽉 참', 'low'];
+  return ['소화불량 · 그만 먹어!', 'over'];
+}
 function intakeHTML(compact){
-  const hi = hourIntake(st, 60);
-  return `<div class="intake ${compact ? 'compact' : ''}"><div class="lbl">최근 60분 섭취 · 가운데 초록 구간에 맞추세요</div>${TARGETS.map(([k, n, u, lo, hi2]) => {
+  const hi = hourIntake(st, 60), rate = absorbRate(st), ss = stomachState();
+  const recent = st.intake.filter(x => st.t - x.t < 60).length;
+  const mins = st.S > 0 ? Math.round(st.S / rate * 60) : 0;
+  const flow = [
+    st.S > 0 ? `<i class="up">에너지 ▲ +${Math.round(rate * 0.45)}/시간</i>` : `<i class="dn">에너지 공급 끊김</i>`,
+    hi.w >= 450 ? `<i class="up">수분 ▲ 유지</i>` : `<i class="dn">수분 ▼ 부족</i>`,
+    hi.na >= 300 ? `<i class="up">전해질 ▲ 유지</i>` : `<i class="dn">전해질 ▼ 부족</i>`
+  ].join('');
+  return `<div class="intake ${compact ? 'compact' : ''}">
+    <div class="stom"><div class="gl"><span>내 위 속 <em class="tg ${ss[1]}">${ss[0]}</em></span><span class="num">탄수 ${Math.round(st.S)}g${mins ? ' · 다 소화까지 ' + mins + '분' : ''}</span></div>
+      <div class="sbar"><i style="width:${Math.min(100, st.S)}%"></i><b style="left:8%;width:22%"></b><span style="left:60%"></span></div>
+      <div class="flow"><span class="lbl">위 → 몸으로</span>${flow}</div></div>
+    <div class="lbl">시간당 먹는 속도 · 가운데 초록에 맞추기${recent ? '' : ' · 1시간째 아무것도 안 먹음'}</div>${TARGETS.map(([k, n, u, lo, hi2]) => {
     const v = hi[k], max = lo + hi2, pos = Math.min(100, v / max * 100);
     const st2 = v < lo ? (v < lo * 0.6 ? ['많이 부족', 'bad'] : ['부족', 'low']) : v > hi2 ? ['과다', 'over'] : ['적정', 'ok'];
     const gap = v < lo ? `+${Math.round(lo - v)}${u} 필요` : v > hi2 ? `${Math.round(v - hi2)}${u} 초과` : '유지';
@@ -952,11 +985,27 @@ function intakeHTML(compact){
       <div class="tticks"><span>0</span><span style="left:${lo / max * 100}%">${lo}</span><span style="left:${hi2 / max * 100}%">${hi2}</span><span style="left:100%">${max}${u}/h</span></div></div>`;
   }).join('')}</div>`;
 }
+// What an item does to the gauges, shown on every supply card. ⏳ = arrives as the gut digests it.
+const EXTRA_FX = {
+  toilet:[['화장실 비움',1],['위 −15g',1]], rest:[['멘탈 +8',1],['근피로 −3',1],['졸음 +3',0]], dropbag:[['보급품 충전',1]],
+  socks:[['물집 해결',1],['멘탈 +5',1]], nap:[['졸음 → 5',1],['멘탈 +15',1]], massage:[['근피로 −8',1],['멘탈 +4',1]],
+  fruit:[['멘탈 +3',1]], noodle:[['멘탈 +10',1]], banana:[['전해질 +2',1]]
+};
+function effChips(it, k){
+  const o = [];
+  if (k === 'water' && it === FOOD.water) o.push(['물 1.5L 충전', 1]);
+  if (it.c) o.push([`에너지 +${Math.round(it.c * 0.45)} ⏳`, 1], [`위 +${it.c}g`, 0]);
+  if (it.w) o.push([`수분 +${Math.round(it.w * 0.03)}`, 1], [`화장실 +${Math.round(it.w * 0.02)}`, 0]);
+  if (it.na) o.push([`전해질 +${Math.round(it.na * 0.02)}`, 1]);
+  if (it.caf) o.push([`졸음 −${Math.round(it.caf * 0.3 / (1 + st.tot.caf / 400))}`, 1]);
+  (EXTRA_FX[k] || []).forEach(x => o.push(x));
+  return `<span class="ech">${o.map(([t, g]) => `<i class="${g ? 'up' : 'nt'}">${t}</i>`).join('')}</span>`;
+}
 function slopeNow(){ const g = (elevAt(st.km + 0.3) - elevAt(st.km)) / 300 * 100; return g; }
 function gColor(v, rev){ const x = rev ? 100 - v : v; return x > 50 ? '#7fae4e' : x > 25 ? '#f2c230' : '#b9322a'; }
 function gaugeHTML(keys){ return GAUGES.filter(g => !keys || keys.includes(g[0])).map(([k, n, rev]) => {
   const cap = k === 'E' ? eMax(st) : 100;
-  return `<div class="g"><div class="gl"><span>${n}</span><span>${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${gColor(k === 'E' ? st[k] / cap * 100 : st[k], rev)}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; }).join(''); }
+  return `<div class="g"><div class="gl"><span>${n}</span><span>${k === 'E' && st.S > 0 ? '<b class="absorb" title="위 속 탄수가 흡수되는 중">▲</b> ' : ''}${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${gColor(k === 'E' ? st[k] / cap * 100 : st[k], rev)}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; }).join(''); }
 function statusTags(){
   const t = [];
   if (st.E < 25) t.push('에너지 고갈'); if (st.H < 30) t.push('탈수'); if (st.Na < 25) t.push('전해질 부족'); if (st.S > 70) t.push('속이 더부룩');
@@ -1083,12 +1132,12 @@ const IC = {
 };
 function iconSVG(k, size){ return `<svg viewBox="0 0 32 32" width="${size || 34}" height="${size || 34}" aria-hidden="true" style="flex:none;display:block;overflow:visible"><g stroke="#2b2420" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">${IC[k] || ''}</g></svg>`; }
 // ---------- effect messages ----------
-const FX_LABEL = {E:['에너지',0],H:['수분',0],Na:['전해질',0],M:['멘탈',0],S:['위 속 탄수',1],F:['근피로',1],Z:['졸음',1],B:['화장실',1]};
+const FX_LABEL = {E:['에너지',0],H:['수분',0],Na:['전해질',0],M:['멘탈',0],F:['근피로',1],Z:['졸음',1],B:['화장실',1]};
 function snap(){ return {tc:st.tot.c, tw:st.tot.w, tna:st.tot.na, tcaf:st.tot.caf, E:st.E,H:st.H,Na:st.Na,M:st.M,S:st.S,F:st.F,Z:st.Z,B:st.B, water:st.inv.water, blister:st.blister, inv:Object.values(st.inv).reduce((a,b)=>a+b,0)}; }
 function diffFx(a, b){
   const out = [];
   for (const k of Object.keys(FX_LABEL)){ const d = Math.round(b[k] - a[k]); if (Math.abs(d) >= 1){ const [n, rev] = FX_LABEL[k]; out.push({t: n + ' ' + (d > 0 ? '+' : '−') + Math.abs(d), good: rev ? d < 0 : d > 0}); } }
-  if (b.tc > a.tc) out.unshift({t:'탄수 ' + Math.round(b.tc - a.tc) + 'g 흡수 대기', good:true});
+  if (b.tc > a.tc) out.unshift({t:'위에 탄수 ' + Math.round(b.tc - a.tc) + 'g → 에너지로 소화 중', good:true});
   if (b.tw > a.tw) out.unshift({t:'물 ' + Math.round(b.tw - a.tw) + 'ml', good:true});
   if (b.tna > a.tna) out.unshift({t:'나트륨 ' + Math.round(b.tna - a.tna) + 'mg', good:true});
   if (b.tcaf > a.tcaf) out.unshift({t:'카페인 ' + Math.round(b.tcaf - a.tcaf) + 'mg', good:true});
@@ -1109,27 +1158,30 @@ function previewFx(keys){
 
 // ---------- runner monologue (black comedy) ----------
 const QUIPS = {
-  bonk:  ['"울트라는 풍경 좀 곁들인 먹기 대회다." 나는 지금 그 대회에서 지는 중.','"일단 먹어라." 기권 이유 1순위는 안 먹어서라던데.','다리가 파업 중. 요구사항은 탄수화물 하나.','방금 내 그림자가 나를 추월했다.'],
-  dry:   ['"목마르기 전에 마셔라." 이미 늦었다.','입안이 현무암이다. 구멍까지 똑같다.','물 생각을 너무 해서 바다가 맛있어 보인다.'],
-  salt:  ['종아리가 쥐 날 타이밍을 재고 있다. 눈치가 보인다.','땀에서 소금꽃이 핀다. 몸이 소금을 수출 중이다.'],
-  gut:   ['울트라 제1법칙: 방귀를 믿지 마라.','위장이 오늘부로 퇴사 의사를 밝혔다.','먹은 게 다 위에 줄 서 있다. 소화 대기 번호 37번.'],
-  legs:  ['"무릎은 소모품이다." 오늘 많이 소모하는 중.','허벅지가 내 이름을 모른다고 한다.','다리가 내 말을 안 듣는다. 원래도 안 들었지만.'],
-  sleep: ['방금 돌하르방이 나한테 인사했다. 아마도.','눈 뜨고 자는 법을 터득했다. 달리는 건 몸이 알아서 한다.','"걷다가 졸면 걷는 게 아니다." 누가 한 말인지 기억도 안 난다.'],
-  pee:   ['"덤불은 아무도 판단하지 않는다." 울트라 격언이다. 덤불 물색 중.','방광이 컷오프보다 먼저 온다.','적당한 덤불을 찾는 눈이 독수리처럼 예리해졌다.'],
-  mind:  ['"항상 나빠지기만 하는 건 아니다." 선배들 말이다. 믿어 보자.','"집에 있는 사람들은 지금 소파에서 피자 먹는다." 이 생각은 도움이 안 된다.','"DNF가 DNS보다 낫다." 그래도 DNF는 싫다.','힘들 땐 내 장례식을 상상하라는 조언이 있다. 조문객이 생각보다 적다.','"그만둘 거면 의자에 10분 앉아 보고 결정해라." …의자가 없다.'],
-  blister:['발바닥 물집이 자기 동네를 만들었다. 이장도 뽑았다.','한 걸음마다 발이 나한테 리뷰를 남긴다. 별 한 개.'],
-  hold:  ['참는 중. 이건 레이스가 아니라 수행이다.','지금 이 순간, 표정 관리가 제일 어려운 종목이다.'],
+  start: ['출발선. 다들 쓸데없이 상쾌해 보인다.','"초반에 아끼면 후반에 웃는다." 그런데 다들 왜 이렇게 빨라?','경기장 조명이 멀어진다. 이제 진짜 시작이다.','"레이스 날엔 새로운 건 금지." 새 양말 신고 왔다.','첫 오르막. 아직 다들 뛴다. 몇 시간 뒤엔 다를 거다.','헤드랜턴 행렬이 한라산으로 이어진다. 장관이다. 숨차다.'],
+  bonk:  ['"울트라는 풍경 좀 곁들인 먹기 대회다." 나는 그 대회에서 지는 중.','"일단 먹어라." 기권 1순위 이유는 안 먹어서라던데.','다리가 파업 중. 요구사항은 탄수화물 하나.','방금 내 그림자가 나를 추월했다.','배에서 꼬르륵. 몸이 정식으로 항의 중.','젤 껍질 하나에도 침이 고인다. 상태가 심각하다.'],
+  dry:   ['"목마르기 전에 마셔라." 이미 늦었다.','입안이 현무암이다. 구멍까지 똑같다.','물 생각을 너무 해서 바다가 맛있어 보인다.','침이 안 넘어간다. 말할 사람이 없어서 다행이다.','소변 색깔이 아메리카노다. 좋은 신호는 아니다.'],
+  salt:  ['종아리가 쥐 날 타이밍을 재고 있다. 눈치가 보인다.','땀에서 소금꽃이 핀다. 몸이 소금을 수출 중이다.','모자 챙에 하얀 소금 띠가 생겼다. 훈장인가 경고인가.'],
+  gut:   ['울트라 제1법칙: 방귀를 믿지 마라.','위장이 오늘부로 퇴사 의사를 밝혔다.','먹은 게 다 위에 줄 서 있다. 소화 대기 번호 37번.','젤을 하나 더 넣으면 위가 반품할 것 같다.','뛸 때마다 위에서 출렁 소리가 난다. 물풍선이 된 기분.'],
+  legs:  ['"무릎은 소모품이다." 오늘 많이 소모하는 중.','허벅지가 내 이름을 모른다고 한다.','다리가 내 말을 안 듣는다. 원래도 안 들었지만.','계단 하나가 에베레스트다.','내리막에서 대퇴사두근이 비명을 지른다. 소리 없는 비명.'],
+  sleep: ['눈 뜨고 자는 법을 터득했다. 달리는 건 몸이 알아서 한다.','"걷다가 졸면 걷는 게 아니다." 누가 한 말인지 기억도 안 난다.','눈꺼풀이 젤보다 무겁다.','방금 3초 동안 어디 있었는지 모르겠다.'],
+  sleepLate: ['방금 돌하르방이 나한테 인사했다. 아마도.','나무가 사람처럼 보인다. 사람이 나무처럼 보이면 더 큰일이다.','어둠 속에서 뭔가 반짝인다. 노루 눈이거나, 환각이거나.','길가 바위가 자꾸 의자로 보인다. 의자를 조심하라.'],
+  pee:   ['"덤불은 아무도 판단하지 않는다." 울트라 격언이다. 덤불 물색 중.','방광이 컷오프보다 먼저 온다.','적당한 덤불을 찾는 눈이 독수리처럼 예리해졌다.','다음 CP 화장실까지 버틸 수 있을까. 아니, 못 버틴다.'],
+  mind:  ['"항상 나빠지기만 하는 건 아니다." 선배들 말이다. 믿어 보자.','"집에 있는 사람들은 지금 소파에서 피자 먹는다." 이 생각은 도움이 안 된다.','"DNF가 DNS보다 낫다." 그래도 DNF는 싫다.','힘들 땐 내 장례식을 상상하라는 조언이 있다. 조문객이 생각보다 적다.','"그만둘 거면 의자에 10분 앉아 보고 결정해라." …의자가 없다.','신청 버튼 누르던 날의 나를 만나면 꼭 한마디 하고 싶다.'],
+  blister:['발바닥 물집이 자기 동네를 만들었다. 이장도 뽑았다.','한 걸음마다 발이 나한테 리뷰를 남긴다. 별 한 개.','양말 속에서 뭔가 터졌다. 확인하지 않기로 했다.'],
+  hold:  ['참는 중. 이건 레이스가 아니라 수행이다.','지금 이 순간, 표정 관리가 제일 어려운 종목이다.','괄약근과 협상 중. 아직 타결은 안 됐다.'],
   cramp: ['종아리가 독립선언을 했다.','근육이 돌처럼 굳었다. 제주답다.'],
-  cutoff:['컷오프가 뒤에서 숨을 쉰다. 입냄새까지 느껴진다.','"시계는 거짓말을 한다." 제발 이번엔 거짓말이길.'],
-  up:    ['"오르막은 걷는 거다. 걷는 건 반칙이 아니다."','방금 등산객이 나를 추월했다. 그분은 지팡이를 짚었다.','오르막에서 뛰는 척하는 중. 아무도 속지 않는다.'],
-  down:  ['중력은 공짜인데 무릎값은 내가 낸다.','내리막에서 넘어지면 빠르긴 하다.'],
-  night: ['헤드랜턴 불빛 안에서만 세상이 존재한다.','앞 주자 헤드랜턴만 따라가는 중. 저 사람도 길 모르면 끝이다.','밤공기가 차다. 바람막이를 꺼낼까 말까 10분째 고민 중.','리본 반사판이 반짝일 때마다 안심한다.'],
-  nightLate: ['헤드랜턴 불빛 안에서만 세상이 존재한다. 철학 아님, 그냥 졸림.','어둠 속에서 뭔가 반짝인다. 노루 눈이거나, 환각이거나.','두 번째 밤이다. 몸이 "이거 어제도 했잖아"라고 항의한다.'],
-  front: ['"추월할 땐 겸손하게." 숨 헐떡이며 겸손 연기 중.','내가 상위권? 다들 길을 잃은 게 분명하다.'],
-  back:  ['뒤에서 1등 노리는 중. 경쟁이 치열하지 않아 유리하다.','"남과 비교하지 마라." 비교할 사람도 안 보인다.'],
-  push:  ['밀어붙이는 중. 미래의 나에게 청구서를 보내는 중.','지금 신나는 건 나중의 내가 갚는다.'],
+  cutoff:['컷오프가 뒤에서 숨을 쉰다. 입냄새까지 느껴진다.','"시계는 거짓말을 한다." 제발 이번엔 거짓말이길.','머릿속으로 남은 시간 계산 중. 계산이 자꾸 틀린다.'],
+  up:    ['"오르막은 걷는 거다. 걷는 건 반칙이 아니다."','방금 등산객이 나를 추월했다. 그분은 지팡이를 짚었다.','오르막에서 뛰는 척하는 중. 아무도 속지 않는다.','폴 짚는 소리만 들린다. 착착. 헉헉. 착착.','"정상 거의 다 왔어요." 이 말을 세 번째 들었다.'],
+  down:  ['중력은 공짜인데 무릎값은 내가 낸다.','내리막에서 넘어지면 빠르긴 하다.','돌길 내리막. 발목이 매 걸음 주사위를 굴린다.'],
+  night: ['헤드랜턴 불빛 안에서만 세상이 존재한다.','앞 주자 헤드랜턴만 따라가는 중. 저 사람도 길 모르면 끝이다.','밤공기가 차다. 바람막이를 꺼낼까 말까 10분째 고민 중.','리본 반사판이 반짝일 때마다 안심한다.','헤드랜턴 배터리 생각이 났다. 생각 안 한 걸로 하자.'],
+  nightLate: ['두 번째 밤이다. 몸이 "이거 어제도 했잖아"라고 항의한다.','이틀째 해가 진다. 시간 감각이 사라졌다.','다시 헤드랜턴을 켰다. 어제의 나는 지금보다 행복했다.'],
+  dawn:  ['하늘이 밝아온다. 해 뜨면 다시 살아난다고 했다.','새벽 공기에 귤 냄새가 섞여 있다. 제주다.'],
+  front: ['"추월할 땐 겸손하게." 숨 헐떡이며 겸손 연기 중.','내가 상위권? 다들 길을 잃은 게 분명하다.','앞에 사람이 안 보인다. 길 잘못 든 건 아니겠지.'],
+  back:  ['뒤에서 1등 노리는 중. 경쟁이 치열하지 않아 유리하다.','"남과 비교하지 마라." 비교할 사람도 안 보인다.','스위퍼가 뒤에 있을까 봐 자꾸 돌아보게 된다.'],
+  push:  ['밀어붙이는 중. 미래의 나에게 청구서를 보내는 중.','지금 신나는 건 나중의 내가 갚는다.','심박수가 자꾸 말을 건다. 무시 중.'],
   easy:  ['아끼는 중. 뭘 아끼는지는 나도 모른다.','"초반에 아끼면 후반에 웃는다." 라고 나에게 말해 주는 중.'],
-  fine:  ['"지금 이 1마일만 달려라." 남은 건 140km 넘지만.','"계획은 덜, 적응은 더." 계획은 출발선에서 이미 무너졌다.','아직 괜찮다. 이 문장을 몇 시간 뒤에 후회할 예정.','다들 출발할 때 너무 빨랐다. 나도 그랬다.','제주 바람이 응원해 준다. 아니, 그냥 맞바람이다.','"레이스 날엔 새로운 건 금지." 새 양말 신고 왔다.']
+  fine:  ['"지금 이 1마일만 달려라." 남은 건 아직 한참이지만.','"계획은 덜, 적응은 더." 계획은 출발선에서 이미 무너졌다.','아직 괜찮다. 이 문장을 몇 시간 뒤에 후회할 예정.','제주 바람이 응원해 준다. 아니, 그냥 맞바람이다.','오늘의 목표: 살아서 경기장 다시 보기.','머릿속에 노래 한 소절이 무한 반복 중이다.']
 };
 let quipLast = 0, quipKey = '', quipRecent = [];
 function quipCandidates(){
@@ -1137,10 +1189,12 @@ function quipCandidates(){
   const nx = CPS[st.seg + 1], margin = nx.cut - (st.t + estTo(nx.km));
   if (st.cramp > 0) c.push(['cramp', 9]); if (st.holding) c.push(['hold', 9]);
   if (st.E < 20) c.push(['bonk', 8]); if (margin < 30) c.push(['cutoff', 8]); if (st.M < 20) c.push(['mind', 7]);
-  if (st.S > 70) c.push(['gut', 7]); if (st.H < 30) c.push(['dry', 7]); if (st.Z > 65) c.push(['sleep', 6]);
+  if (st.S > 70) c.push(['gut', 7]); if (st.H < 30) c.push(['dry', 7]); if (st.Z > 65) c.push([st.t > 1200 && st.Z > 70 ? 'sleepLate' : 'sleep', 6]);
   if (st.B > 80) c.push(['pee', 6]); if (st.F > 65) c.push(['legs', 5]); if (st.Na < 25) c.push(['salt', 5]); if (st.blister) c.push(['blister', 4]);
   if (g > 0.1) c.push(['up', 3]); if (g < -0.1) c.push(['down', 3]);
   if (hc >= 21 || hc < 5) c.push([st.t > 1200 ? 'nightLate' : 'night', 2]);
+  if (hc >= 5 && hc < 7) c.push(['dawn', 3]);
+  if (st.t < 120) c.push(['start', 4]);
   const sd = standings(), r = sd.findIndex(x => x.me) + 1;
   if (r <= 5 && st.km > 3) c.push(['front', 2]); if (r > sd.length * 0.7) c.push(['back', 2]);
   if (st.pace === 'push') c.push(['push', 2]); if (st.pace === 'easy') c.push(['easy', 1]);
@@ -1154,8 +1208,8 @@ function quip(force){
   if (!force && top === quipKey && now - quipLast < 16000) return;
   if (!force && now - quipLast < 5000) return;
   const key = Math.random() < 0.7 ? top : c[Math.floor(Math.random() * Math.min(3, c.length))][0];
-  const pool = QUIPS[key].filter(q => !quipRecent.includes(q)), line = (pool.length ? pool : QUIPS[key])[Math.floor(Math.random() * (pool.length || QUIPS[key].length))];
-  quipRecent.push(line); if (quipRecent.length > 8) quipRecent.shift();
+  const pool = QUIPS[key].filter(q => !quipRecent.includes(q) && !(st.quipUsed || {})[q]), line = (pool.length ? pool : QUIPS[key])[Math.floor(Math.random() * (pool.length || QUIPS[key].length))];
+  quipRecent.push(line); if (quipRecent.length > 8) quipRecent.shift(); (st.quipUsed = st.quipUsed || {})[line] = 1;
   quipKey = top; quipLast = now;
   const el = document.getElementById('quip'); if (!el) return;
   el.classList.remove('pop', 'event'); void el.offsetWidth; el.classList.add('pop');
@@ -1179,7 +1233,7 @@ function openSupply(auto){
   const flavor = ['숨을 고르며 주머니를 뒤진다.','오르막 전에 뭐라도 넣어 둘까?','발걸음을 늦추고 보급 타이밍.','목이 마르다. 뭐부터 먹지?'];
   const used = []; let last = null, joke = ''; const supStart = snap();
   const draw = () => {
-    const opts = Object.entries(ITEMS).map(([k, it]) => `<button type="button" class="opt ${recommend(st, k) ? 'rec' : ''}" data-it="${k}" ${st.inv[k] <= 0 ? 'disabled' : ''}>${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k)}<span class="ot"><span class="on">${it.name}</span><span class="oh">${it.hint}</span></span><span class="cnt">${st.inv[k]}</span></button>`).join('')
+    const opts = Object.entries(ITEMS).map(([k, it]) => `<button type="button" class="opt ${recommend(st, k) ? 'rec' : ''}" data-it="${k}" ${st.inv[k] <= 0 ? 'disabled' : ''}>${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k)}<span class="ot"><span class="on">${it.name}</span>${effChips(it, k)}</span><span class="cnt">${st.inv[k]}</span></button>`).join('')
       + (st.B > 45 ? `<button type="button" class="opt ${recommend(st, 'pee') ? 'rec' : ''}" data-it="pee">${recommend(st, 'pee') ? '<span class="recb">추천</span>' : ''}${iconSVG('pee')}<span class="ot"><span class="on">노상 볼일</span><span class="oh">화장실 비우기 · 1.5분</span></span></button>` : '');
     $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">${st.km.toFixed(1)} km · ${fmtClock(st.t)}</div><h3 id="mTitle">${auto ? '보급 타이밍' : '보급 꺼내기'}</h3>
       <p>${auto ? flavor[Math.floor(st.km) % flavor.length] : '걸으면서 주머니에서 꺼내 먹어요.'}</p>
@@ -1213,7 +1267,7 @@ function arriveCP(idx){
   const sel = new Set();
   const draw = () => {
     const stop = [...sel].reduce((a, k) => a + FOOD[k].min, 0), dep = st.t + stop, margin = cp.cut - dep;
-    const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''} ${recommend(st, k) ? 'rec' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span><span class="oh">${k === 'water' ? `남은 물 ${st.inv.water * 250}ml → 1.5L` : FOOD[k].hint}</span></span><span class="om" ${k === 'water' ? 'style="right:24px"' : ''}>${FOOD[k].min}분</span>${k === 'water' ? `<span class="cnt" style="background:${st.inv.water <= 1 ? '#e8a09a' : '#8ec9d8'}">${st.inv.water}</span>` : ''}</button>`).join('');
+    const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''} ${recommend(st, k) ? 'rec' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span>${k === 'water' ? `<span class="oh">남은 물 ${st.inv.water * 250}ml</span>` : ''}${effChips(FOOD[k], k)}</span><span class="om" ${k === 'water' ? 'style="right:24px"' : ''}>${FOOD[k].min}분</span>${k === 'water' ? `<span class="cnt" style="background:${st.inv.water <= 1 ? '#e8a09a' : '#8ec9d8'}">${st.inv.water}</span>` : ''}</button>`).join('');
     const pv = sel.size ? previewFx([...sel]) : [];
     $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">CP${idx}${cp.crew ? ' · 크루 CP' : ''} · ${cp.km} km · 현재 ${rank}위</div><h3 id="mTitle">${cp.name}</h3><div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div>
       <div class="sumline"><span>정차 <b class="num">${stop}분</b> · 출발 <b class="num">${fmtClock(dep)}</b></span><span class="${margin < 20 ? 'warn' : ''}">컷오프 ${fmtClock(cp.cut)} · 여유 <b class="num">${margin < 0 ? '초과!' : fmtDur(margin)}</b></span></div>
