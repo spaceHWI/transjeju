@@ -129,7 +129,7 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .tg.ok{background:#cfe6a8}.tg.low{background:#fbe39a}.tg.bad{background:#f3c1bb}.tg.over{background:#f6c99a}
 .ech{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
 .ech i{font-style:normal;font-family:var(--display);font-size:11px;line-height:1.2;border:1.2px solid var(--ink);border-radius:6px;padding:1px 5px;background:var(--card2)}
-.ech i.up{background:#cfe6a8}.ech i.nt{background:#efe7d4;color:var(--muted)}
+.ech i.in{background:#fff1b8}.ech i.up{background:#cfe6a8}.ech i.nt{background:#efe7d4;color:var(--muted)}
 .opt .on small{font-family:var(--body);font-size:11px;color:var(--muted)}
 .stom{display:flex;flex-direction:column;gap:4px;padding-bottom:6px;border-bottom:2px dashed var(--line)}
 .stom .gl{display:flex;justify-content:space-between;gap:6px;font-family:var(--display);font-size:14px}
@@ -1016,12 +1016,12 @@ const EXTRA_FX = {
 function effChips(it, k){
   const o = [];
   if (k === 'water' && it === FOOD.water) o.push(['물 1.5L 충전', 1]);
-  if (it.c) o.push([`에너지 +${Math.round(it.c * 0.45)} ⏳`, 1], [`더부룩함 +${it.c}`, 0]);
-  if (it.w) o.push([`수분 +${Math.round(it.w * 0.03)}`, 1], [`화장실 +${Math.round(it.w * 0.02)}`, 0]);
-  if (it.na) o.push([`전해질 +${Math.round(it.na * 0.02)}`, 1]);
+  if (it.c) o.push([`탄수 +${it.c}g`, 2], [`에너지 +${Math.round(it.c * 0.45)} ⏳`, 1], [`더부룩함 +${it.c}`, 0]);
+  if (it.w) o.push([`물 +${it.w}ml`, 2], [`수분 +${Math.round(it.w * 0.03)}`, 1], [`화장실 +${Math.round(it.w * 0.02)}`, 0]);
+  if (it.na) o.push([`나트륨 +${it.na}mg`, 2], [`전해질 +${Math.round(it.na * 0.02)}`, 1]);
   if (it.caf) o.push([`졸음 −${Math.round(it.caf * 0.3 / (1 + st.tot.caf / 400))}`, 1]);
   (EXTRA_FX[k] || []).forEach(x => o.push(x));
-  return `<span class="ech">${o.map(([t, g]) => `<i class="${g ? 'up' : 'nt'}">${t}</i>`).join('')}</span>`;
+  return `<span class="ech">${o.map(([t, g]) => `<i class="${g === 2 ? 'in' : g ? 'up' : 'nt'}">${t}</i>`).join('')}</span>`;
 }
 function slopeNow(){ const g = (elevAt(st.km + 0.3) - elevAt(st.km)) / 300 * 100; return g; }
 function gColor(v, rev){ const x = rev ? 100 - v : v; return x > 50 ? '#7fae4e' : x > 25 ? '#f2c230' : '#b9322a'; }
@@ -1165,7 +1165,7 @@ function snap(){ return {tc:st.tot.c, tw:st.tot.w, tna:st.tot.na, tcaf:st.tot.ca
 function diffFx(a, b){
   const out = [];
   for (const k of Object.keys(FX_LABEL)){ const d = Math.round(b[k] - a[k]); if (Math.abs(d) >= 1){ const [n, rev] = FX_LABEL[k]; out.push({t: n + ' ' + (d > 0 ? '+' : '−') + Math.abs(d), good: rev ? d < 0 : d > 0}); } }
-  if (b.tc > a.tc) out.unshift({t:'더부룩함 +' + Math.round(b.tc - a.tc) + ' (소화되며 에너지로)', good:false});
+  if (b.tc > a.tc) out.unshift({t:'탄수 +' + Math.round(b.tc - a.tc) + 'g (소화되며 에너지로)', good:true});
   if (b.tw > a.tw) out.unshift({t:'물 ' + Math.round(b.tw - a.tw) + 'ml', good:true});
   if (b.tna > a.tna) out.unshift({t:'나트륨 ' + Math.round(b.tna - a.tna) + 'mg', good:true});
   if (b.tcaf > a.tcaf) out.unshift({t:'카페인 ' + Math.round(b.tcaf - a.tcaf) + 'mg', good:true});
