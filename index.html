@@ -1,5 +1,11 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="트랜스제주 100마일 코스를 달리는 트레일러닝 시뮬레이션 게임">
-<title>트랜스제주 시뮬레이터</title>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="한라산을 넘는 148.8km. 보급과 CP 선택으로 가상 러너 100명 중 1위를 노리는 트레일러닝 시뮬레이션 게임.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="트랜스제주 100마일 시뮬레이터">
+<meta property="og:title" content="트랜스제주 100마일 시뮬레이터"><meta property="og:description" content="한라산을 넘는 148.8km. 보급과 CP 선택으로 가상 1위를 노려 보세요.">
+<meta property="og:url" content="https://spacehwi.github.io/transjeju/"><meta property="og:image" content="https://spacehwi.github.io/transjeju/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="트랜스제주 100마일 시뮬레이터"><meta name="twitter:image" content="https://spacehwi.github.io/transjeju/og.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="theme-color" content="#f2c230">
+<title>트랜스제주 100마일 시뮬레이터</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
 <style>
 /* Layout: one-screen race console — island map (paper cut layers) left, runner gauges right, elevation strip below. Single committed look: matte paper cut-out on cream, thin brown outlines, flat colour, slightly tilted paper cards. */
@@ -94,6 +100,11 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .race{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
 .mapbox{position:relative;overflow:hidden;padding:0;background:var(--sea)}
 .mapbox svg{display:block;width:100%;height:auto}
+.quip{position:absolute;left:50%;top:12px;transform:translateX(-50%) rotate(-1deg);max-width:min(78%,520px);background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--shadow);padding:7px 14px;font-family:var(--display);font-size:16px;line-height:1.3;text-align:center;pointer-events:none;z-index:2}
+.quip::after{content:'';position:absolute;left:50%;bottom:-9px;width:14px;height:14px;background:var(--card);border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:translateX(-50%) rotate(45deg)}
+.quip.pop{animation:quipIn .35s ease-out}
+@keyframes quipIn{from{opacity:0;transform:translateX(-50%) translateY(-8px) rotate(-3deg)}to{opacity:1;transform:translateX(-50%) rotate(-1deg)}}
+@media (max-width:560px){.quip{font-size:13px;padding:5px 10px;max-width:88%}}
 .mapchips{position:absolute;left:10px;bottom:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
 .chip{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:3px 9px;font-family:var(--display);font-size:14px;box-shadow:2px 2px 0 var(--shadow)}
 .side{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -101,7 +112,14 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .g .gl{display:flex;justify-content:space-between;font-family:var(--display);font-size:14px}
 .g .gl span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
 .gb{height:12px;border:2px solid var(--ink);border-radius:7px;background:var(--card);overflow:hidden;margin-top:2px}
+.gb{position:relative}
 .gb i{display:block;height:100%;transition:width .2s}
+.gb s{position:absolute;right:0;top:0;bottom:0;background:repeating-linear-gradient(135deg,#c9bda6 0 3px,#efe7d4 3px 6px);border-left:2px solid var(--ink)}
+.intake{grid-column:1/-1;display:flex;flex-direction:column;gap:5px;padding:8px 10px;border:2px dashed var(--line);border-radius:10px;background:var(--card2)}
+.intake .im .gl{display:flex;justify-content:space-between;font-family:var(--display);font-size:13px}
+.intake .im .gl span:last-child{color:var(--muted)}
+.ib{position:relative;height:11px}
+.ib b{position:absolute;top:-2px;bottom:-2px;border-left:2px dashed var(--ink);border-right:2px dashed var(--ink);background:rgba(127,174,78,.18)}
 .status{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;min-height:0}
 .tag{font-size:12px;font-family:var(--display);border:1.5px solid var(--ink);border-radius:8px;padding:1px 7px;background:#f6d2b5}
 .paceset{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
@@ -138,6 +156,8 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .opt .om{position:absolute;right:8px;top:7px;font-size:12px;color:var(--muted)}
 .opt.sel{background:#fff1b8;transform:translateY(-2px) rotate(-1deg);box-shadow:3px 4px 0 rgba(43,36,32,.35)}
 .opt.crew{border-style:dashed}
+.opt.rec{box-shadow:0 0 0 3px #f2c230,3px 3px 0 3px var(--shadow)}
+.recb{position:absolute;left:-6px;top:-10px;background:var(--red);color:#fbf8f1;font-family:var(--display);font-size:11px;line-height:1;padding:3px 6px;border:1.5px solid var(--ink);border-radius:6px;transform:rotate(-6deg)}
 .opt:disabled{opacity:.4}
 .opt .cnt{position:absolute;right:-7px;top:-9px;width:24px;height:24px;border-radius:50%;border:2px solid var(--ink);background:var(--yellow);font-size:13px;display:flex;align-items:center;justify-content:center}
 .fxline{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff1b8;border:2px solid var(--ink);border-radius:12px;transform:rotate(.4deg);font-size:14px}
@@ -229,7 +249,7 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
       <div class="presets" id="presets"></div>
       <div class="stats" id="stats"></div>
       <div class="derived" id="derived"></div>
-      <div class="est"><div><div class="lbl" style="color:var(--ink)">이 빌드의 예상 완주</div><div class="v num" id="estTime">-</div></div><div style="font-size:13px;max-width:28ch">보급을 잘 챙겼을 때 기준. 가상 1위 목표는 22시간 초반.</div></div>
+      <div class="est"><div><div class="lbl" style="color:var(--ink)">이 빌드의 예상 완주</div><div class="v num" id="estTime">-</div></div><div style="font-size:13px;max-width:28ch">보급을 잘 챙겼을 때 기준. 가상 1위 목표는 22시간 35분.</div></div>
       <button class="btn primary" id="startBtn" style="font-size:20px">출발선에 서기</button>
     </div>
 
@@ -402,17 +422,20 @@ function paceHpk(d, km){
   else { const dg = -g; h += Math.max(dg - 0.04, 0) * 1000 / d.DESC - Math.min(dg, 0.04) * 1.6 / d.vF; }
   return Math.max(h, 0.06);
 }
-const KIT = {gel:8, caf:2, bar:2, salt:6, water:4};
+const KIT = {gel:8, caf:2, bar:2, salt:8, water:6}; // water = 250 ml sips (1.5 L carried)
+const WATER_MAX = 6;
 function newRunner(raw){
   const stats = scaleStats(raw);
   return { raw:{...raw}, s:{...stats}, d:derive(stats), km:0, t:0, seg:0, pace:'norm',
-    E:90, H:90, Na:80, S:10, F:0, Z:10, M:85, B:15,
-    inv:{...KIT}, blister:false, cramp:0, holding:false, nextSupply:4.5,
+    E:90, H:90, Na:80, S:0, F:0, Z:10, M:85, B:15,
+    inv:{...KIT}, eats:[], intake:[], tot:{c:0,w:0,na:0,caf:0}, blister:false, cramp:0, holding:false, nextSupply:35,
     cd:{}, flags:{}, splits:[{cp:0, arr:0, dep:0}], log:[], dnf:null, done:false, stopMin:0 };
 }
 function clockMin(t){ return START_CLOCK + t; }
 function clockHour(t){ return (clockMin(t) / 60) % 24; }
-function clamp(st){ for (const k of ['E','H','Na','S','F','Z','M','B']) st[k] = Math.max(0, Math.min(100, st[k])); }
+// Energy ceiling shrinks as muscle damage and hours pile up (glycogen stores and fuel use degrade late in a 100-miler)
+function eMax(st){ return Math.max(50, 100 - 0.3 * st.F - 0.6 * st.t / 60); }
+function clamp(st){ for (const k of ['E','H','Na','S','F','Z','M','B']) st[k] = Math.max(0, Math.min(100, st[k])); st.E = Math.min(st.E, eMax(st)); }
 function speedMul(st){
   let m = PACE[st.pace].spd;
   if (st.E < 30) m *= 0.55 + 0.015*st.E;
@@ -431,34 +454,102 @@ function speedMul(st){
   return m;
 }
 function speedNow(st){ return speedMul(st) / paceHpk(st.d, st.km); }
+// Physiology, based on the ISSN ultra-marathon position stand (Tiller et al. 2019):
+// carbs 30-50 g/h baseline (100-mile finishers ~66 g/h), fluid 450-750 ml/h, sodium 300-600 mg/h,
+// caffeine in small repeated doses for the second night. S is grams of carbohydrate still in the gut;
+// it is absorbed at a capped rate, so energy arrives gradually and boluses pile up into GI distress.
+function absorbRate(st){
+  const s = st.s, P = PACE[st.pace];
+  let r = 40 + 1.5 * s.dig;                     // g/h, ~55 at an average build
+  if (st.H < 40) r *= 0.6;                      // dehydration cuts gut blood flow
+  if (st.pace === 'push') r *= 0.85;
+  if (st.km > 90) r *= s.dig >= 14 ? 0.95 : 0.85; // late-race nausea
+  const hc = clockHour(st.t); if (hc >= 10 && hc < 17) r *= 0.92;
+  return r;
+}
 function physio(st, dt, dk, up, down){
   const h = dt / 60, P = PACE[st.pace], s = st.s, hc = clockHour(st.t);
-  st.E -= 17 * P.drain * (1.25 - 0.025*s.end) * (up > 0 ? 1.25 : 1) * h;
-  const heat = (hc >= 10 && hc < 17) ? 5 : (hc >= 8 && hc < 19 ? 2 : 0);
-  st.H -= (7 + heat) * P.drain * h;
-  st.Na -= (3.5 + heat*0.4) * P.drain * h;
-  st.S -= (10 + 0.8*s.dig) * h;
+  const night = hc >= 19.5 || hc < 6, cold = night && elevAt(st.km) > 1200;
+  // absorb carbs from the gut into energy
+  const ab = Math.min(st.S, absorbRate(st) * h); st.S -= ab; st.E += ab * 0.45;
+  st.E -= 20 * P.drain * (1.25 - 0.025*s.end) * (up > 0 ? 1.2 : 1) * (cold ? 1.15 : 1) * h;
+  const heat = (hc >= 10 && hc < 17) ? 7 : (hc >= 8 && hc < 19 ? 3 : 0);
+  st.H -= (12 + heat) * P.drain * (night ? 0.75 : 1) * h;   // ~500 ml/h to stay level
+  st.Na -= (5 + heat*0.3) * P.drain * h;
   st.B += 2.5 * h;
-  const awake = st.t / 60 + 15;
-  if (hc >= 23 || hc < 6) st.Z += (3 + awake*0.12) * (1.25 - 0.025*s.men) * h;
-  else if (hc >= 6 && hc < 10) st.Z -= 8 * h;
-  else st.Z += 0.8 * h;
+  // Sleep pressure builds with hours awake (started the day at 06:00 Fri) and peaks in the 02-05 circadian low
+  const awake = st.t / 60 + 15, press = 1 + Math.pow(awake / 24, 2);
+  const circ = (hc >= 2 && hc < 5) ? 1.6 : (hc >= 23 || hc < 2 || (hc >= 5 && hc < 6)) ? 1.15 : (hc >= 13 && hc < 16) ? 0.6 : 0.25;
+  const wake = (hc >= 6 && hc < 10) ? 8 / press : 0;  // morning light helps less the longer you have been up
+  st.Z += (3.2 * press * circ * (1.25 - 0.025*s.men) - wake) * h;
   st.F += (dk*0.15 + down*0.008*(1.6 - 0.05*s.dur) + up*0.0015) * P.fat;
   const bad = (st.E<25)+(st.H<30)+(st.Na<25)+(st.S>70)+(st.Z>70)+(st.B>85)+(st.F>75);
-  st.M -= (1.0*(1.3 - 0.03*s.men) + bad*1.2) * h;
+  // Mental fatigue accelerates with time on feet and in the small hours
+  const lonely = (hc >= 1 && hc < 5) ? 1.4 : 1, worn = 1 + st.t / 60 / 20;
+  st.M -= (1.6*(1.3 - 0.03*s.men) * lonely * worn + bad*1.5 + (st.Z > 60 ? 1.5 : 0)) * h;
   if (st.cramp > 0) st.cramp = Math.max(0, st.cramp - dt);
   clamp(st);
 }
+function hourIntake(st, mins){
+  const w = mins || 60, o = {c:0, w:0, na:0, caf:0};
+  for (const x of st.intake) if (st.t - x.t < w){ o.c += x.c; o.w += x.w; o.na += x.na; o.caf += x.caf; }
+  const k = 60 / Math.min(w, Math.max(st.t, 1)); // per-hour rate (early race uses elapsed time)
+  return {c:o.c*k, w:o.w*k, na:o.na*k, caf:o.caf, raw:o};
+}
 function chance(p){ return Math.random() < p; }
+// Casual wildlife & trail moments. modal:true ones ask for a choice.
+const FUN = [
+  {id:'roe',   w:5, text:'노루가 길가에서 고개를 든다. 응원이라고 믿기로 했다.', M:6},
+  {id:'boar',  w:3, modal:true, title:'멧돼지 출현!', text:'숲에서 멧돼지가 코를 킁킁거리며 나타났다.', M:-8},
+  {id:'crow',  w:3, text:'까마귀 떼가 나를 내려다본다. 평가하는 눈빛이다.', M:-3},
+  {id:'dog',   w:3, text:'동네 강아지가 1km를 따라왔다. 최고의 페이서.', M:5, day:true},
+  {id:'star',  w:3, text:'오름 위로 별똥별이 떨어졌다. 소원은 "다리 교체".', M:6, night:true},
+  {id:'gyul',  w:3, text:'주민 할망이 귤을 건넸다. 세상에서 제일 맛있는 귤.', M:5, carbs:10, day:true},
+  {id:'fog',   w:2, text:'한라산 안개가 몰려온다. 리본이 안 보인다.', M:-4, high:true},
+  {id:'snake', w:2, text:'발밑에서 뱀이 스르륵. 심장이 먼저 결승선에 갔다.', M:-6, day:true},
+  {id:'cheer', w:3, text:'응원단이 내 이름을 불렀다. 배번을 읽은 거지만 감동이다.', M:8, low:true},
+  {id:'lost',  w:2, modal:true, title:'리본이 안 보인다', text:'한참 리본을 못 봤다. 길을 잘못 들었나?', M:-5},
+  {id:'rain',  w:2, text:'비가 쏟아진다. 신발이 수족관이 됐다.', M:-4},
+  {id:'horse', w:2, text:'목장의 말이 같이 뛰어 준다. 말이 더 잘 뛴다.', M:4, low:true},
+  {id:'cat',   w:2, text:'CP 앞 고양이가 내 바나나를 노린다.', M:3, low:true},
+  {id:'owl',   w:2, text:'부엉이가 운다. 무서운 건지 졸린 건지 모르겠다.', M:-2, night:true},
+  {id:'fart',  w:3, text:'방귀를 뀌었다. 바로 뒤 주자가 거리를 벌렸다. 전략적 성공.', M:4},
+  {id:'photo', w:3, text:'카메라맨 발견. 50m 동안만 엘리트 선수처럼 뛰었다.', M:6, F:1, day:true},
+  {id:'snot',  w:2, text:'콧물을 팔뚝으로 닦았다. 팔이 반짝인다. 이제 그런 거 신경 안 쓴다.', M:-1},
+  {id:'gelhand',w:2, text:'젤 껍질이 손에 붙어서 안 떨어진다. 이제 신체의 일부다.', M:-1},
+  {id:'stone', w:2, text:'돌하르방이 "힘내"라고 했다. 아마 진짜는 아닐 거다.', M:3, sleepy:true},
+  {id:'sign',  w:2, text:'"결승까지 2km" 표지판! …은 20K 코스용이었다.', M:-8, late:true},
+  {id:'drone', w:2, text:'드론이 머리 위에서 윙윙. 내 고통이 4K로 기록되는 중.', M:2, day:true},
+  {id:'chafe', w:3, modal:true, title:'쓸림 경보', text:'사타구니가 쓸리기 시작했다. 걸음걸이가 카우보이가 됐다.', choices:[
+    {label:'바셀린 듬뿍 (1분)', primary:true, t:1, M:-1, log:'바셀린을 듬뿍. 체면도 같이 발랐다'},
+    {label:'참는다', M:-9, F:2, log:'쓸림을 참는 중. 카우보이 워크'}]},
+  {id:'lace',  w:3, modal:true, title:'신발끈이 풀렸다', text:'숙이면 다시는 못 일어날 것 같은 예감.', choices:[
+    {label:'숙여서 묶는다 (1분)', primary:true, t:1, F:2, log:'끈을 묶고 겨우 일어섰다'},
+    {label:'그냥 간다', M:-3, risk:'fall', log:'끈 풀린 채로 간다. 운명에 맡김'}]},
+  {id:'cow',   w:2, low:true, modal:true, title:'길 막은 소', text:'목장 소가 길 한가운데 누워 있다. 비켜줄 생각이 전혀 없다.', choices:[
+    {label:'빙 돌아간다 (2분)', t:2, log:'소를 피해 돌아감'},
+    {label:'"실례합니다" 하고 옆으로', primary:true, M:-3, log:'소에게 양해를 구하고 통과. 대답은 없었다'}]},
+  {id:'poo',   w:2, modal:true, title:'큰 거 신호', text:'배에서 천둥이 친다. 지금 아니면 늦는다.', choices:[
+    {label:'오름 덤불로 (5분)', primary:true, t:5, S:-20, B:-100, M:-2, log:'덤불 속 해결. 휴지는 없었다. 나뭇잎은 많았다'},
+    {label:'CP까지 참는다', hold:true, M:-6, log:'괄약근과 협상 중'}]}
+];
+function pickFun(st){
+  const hc = clockHour(st.t), night = hc >= 19.5 || hc < 6, ele = elevAt(st.km);
+  const pool = FUN.filter(f => !(f.day && night) && !(f.night && !night) && !(f.high && ele < 900) && !(f.low && ele > 700) && !(f.sleepy && st.Z < 50) && !(f.late && st.km < 100));
+  let r = Math.random() * pool.reduce((a, f) => a + f.w, 0);
+  for (const f of pool){ r -= f.w; if (r <= 0) return f; }
+  return null;
+}
 function rollEvents(st, km){
   const s = st.s, g = (elevAt(km + STEP) - elevAt(km)) / (STEP*1000), P = PACE[st.pace], tech = SEG[st.seg].tech;
   const ok = k => !(st.cd[k] > km);
-  if (g < -0.07 && ok('fall') && chance(0.004*(1.8 - 0.045*s.agi - 0.02*s.flex)*(1 + st.Z/70)*P.fat*(tech > 1.2 ? 1.5 : 1))){ st.cd.fall = km + 2; return {type:'fall'}; }
+  if (g < -0.07 && ok('fall') && chance(0.004*(1.8 - 0.045*s.agi - 0.02*s.flex)*(1 + st.Z/70)*P.fat*(tech > 1.2 ? 1.5 : 1)*(st.lace ? 2.5 : 1))){ st.cd.fall = km + 2; return {type:'fall'}; }
   if ((st.Na < 25 || st.F > 65) && st.cramp <= 0 && ok('cramp') && chance(0.006*(1.7 - 0.04*s.flex)*(st.Na < 25 ? 1.6 : 0.5))){ st.cd.cramp = km + 4; return {type:'cramp'}; }
   if (st.S > 72 && !st.holding && ok('gi') && chance(0.02*(1.5 - 0.04*s.dig))){ st.cd.gi = km + 3; return {type:'gi'}; }
   if (st.F > 35 && !st.blister && ok('blister') && chance(0.002*(1.6 - 0.05*s.dur))){ st.blister = true; st.cd.blister = km + 10; return {type:'blister'}; }
   if (st.E < 8 && ok('bonk')){ st.cd.bonk = km + 3; return {type:'bonk'}; }
   if (st.M < 4 && ok('quit')){ st.cd.quit = km + 6; return {type:'quit'}; }
+  if (ok('fun') && chance(0.035)){ st.cd.fun = km + 1.3; const f = pickFun(st); if (f) return {type:'fun', f}; }
   return null;
 }
 const SCENIC = [
@@ -485,33 +576,84 @@ function advance(st, dtMin){
     for (const sc of SCENIC) if (st.km >= sc.km && !st.flags[sc.id]){ st.flags[sc.id] = true; st.M += sc.M; clamp(st); return {type:'scenic', text:sc.text}; }
     if (hitCP) return {type:'cp', idx: st.seg + 1};
     for (let m = Math.floor(k0*10) + 1; m <= Math.floor(st.km*10); m++){ const ev = rollEvents(st, m/10); if (ev) return ev; }
-    if (st.km >= st.nextSupply){ st.nextSupply = st.km + 5 + Math.random()*2; if (st.km < TOTAL_KM - 2) return {type:'supply'}; }
+    if (st.t >= st.nextSupply){ st.nextSupply = st.t + 30 + Math.random()*12; if (st.km < TOTAL_KM - 2) return {type:'supply'}; }
   }
   return null;
 }
 // ---------- supplies ----------
+// c = carbohydrate g, w = fluid ml, na = sodium mg, caf = caffeine mg
 const ITEMS = {
-  gel:   {name:'에너지젤',   min:0.3, hint:'에너지↑ 위장 조금', fx:st => { st.E += 20*st.d.eff; st.S += 9; }},
-  caf:   {name:'카페인젤',   min:0.3, hint:'에너지↑ 졸음↓↓',    fx:st => { st.E += 16*st.d.eff; st.Z -= 30; st.S += 10; st.M += 4; }},
-  bar:   {name:'에너지바',   min:1.0, hint:'에너지↑↑ 위장↑',    fx:st => { st.E += 30*st.d.eff; st.S += 18; }},
-  salt:  {name:'소금캡슐',   min:0.2, hint:'전해질↑',            fx:st => { st.Na += 25; st.S += 2; }},
-  water: {name:'물 마시기',  min:0.3, hint:'수분↑ 화장실↑',      fx:st => { st.H += 16; st.B += 7; st.Na -= 2; }}
+  gel:   {name:'에너지젤',  min:0.3, c:25, w:0,   na:50,  caf:0,  hint:'탄수 25g'},
+  caf:   {name:'카페인젤',  min:0.3, c:25, w:0,   na:50,  caf:75, hint:'탄수 25g · 카페인 75mg'},
+  bar:   {name:'에너지바',  min:1.0, c:40, w:0,   na:150, caf:0,  hint:'탄수 40g · 천천히 소화'},
+  salt:  {name:'소금캡슐',  min:0.2, c:0,  w:0,   na:300, caf:0,  hint:'나트륨 300mg'},
+  water: {name:'물 마시기', min:0.3, c:0,  w:250, na:0,   caf:0,  hint:'물 250ml'}
 };
 const FOOD = {
-  water:   {name:'물통 채우기',   min:1, hint:'물 4모금 충전',        fx:st => { st.inv.water = 4; }},
-  cola:    {name:'콜라',          min:1, hint:'에너지·졸음↓',         fx:st => { st.E += 10*st.d.eff; st.Z -= 15; st.H += 6; st.S += 5; st.B += 4; }},
-  banana:  {name:'바나나',        min:1, hint:'에너지·전해질',        fx:st => { st.E += 12*st.d.eff; st.Na += 4; st.S += 6; }},
-  fruit:   {name:'수박·귤',       min:1, hint:'수분·멘탈',            fx:st => { st.H += 12; st.E += 6*st.d.eff; st.S += 3; st.M += 3; }},
-  riceball:{name:'주먹밥',        min:2, hint:'에너지↑↑ 위장↑',       fx:st => { st.E += 24*st.d.eff; st.Na += 6; st.S += 15; }},
-  noodle:  {name:'따뜻한 국수',   min:5, hint:'에너지·전해질·멘탈↑↑', fx:st => { st.E += 28*st.d.eff; st.Na += 25; st.H += 10; st.S += 18; st.M += 10; }},
-  coffee:  {name:'커피',          min:1, hint:'졸음↓↓',               fx:st => { st.Z -= 25; st.S += 3; st.B += 5; }},
-  toilet:  {name:'화장실',        min:3, hint:'화장실 비우기·위장 편하게', fx:st => { st.B = 0; st.S -= 25; st.holding = false; }},
-  rest:    {name:'의자에 앉아 쉬기', min:5, hint:'멘탈↑ 근피로 조금↓', fx:st => { st.F -= 3; st.M += 8; st.Z += 3; }},
-  dropbag: {name:'드롭백 재보급', min:3, hint:'젤·바·소금 다시 채우기', crew:true, fx:st => { st.inv = {...KIT, water: st.inv.water}; }},
-  socks:   {name:'양말·신발 교체', min:6, hint:'물집 해결',          crew:true, fx:st => { st.blister = false; st.F -= 2; st.M += 5; }},
-  nap:     {name:'파워냅 15분',   min:15, hint:'졸음 리셋·멘탈↑↑',   crew:true, fx:st => { st.Z = 5; st.M += 15; }},
-  massage: {name:'크루 마사지',   min:8, hint:'근피로↓↓',            crew:true, fx:st => { st.F -= 8; st.M += 4; }}
+  water:   {name:'물통 채우기',   min:1, c:0,  w:0,   na:0,    caf:0,  hint:'물 1.5L 가득 충전', fx:st => { st.inv.water = WATER_MAX; }},
+  cola:    {name:'콜라 한 컵',    min:1, c:20, w:200, na:10,   caf:30, hint:'탄수 20g · 물 200ml · 카페인'},
+  banana:  {name:'바나나',        min:1, c:25, w:0,   na:0,    caf:0,  hint:'탄수 25g · 칼륨', fx:st => { st.Na += 2; }},
+  fruit:   {name:'수박·귤',       min:1, c:10, w:200, na:0,    caf:0,  hint:'탄수 10g · 물 200ml', fx:st => { st.M += 3; }},
+  riceball:{name:'주먹밥',        min:2, c:45, w:0,   na:400,  caf:0,  hint:'탄수 45g · 나트륨 400mg'},
+  noodle:  {name:'컵라면',        min:5, c:50, w:350, na:1500, caf:0,  hint:'탄수 50g · 국물 350ml · 나트륨 1500mg', fx:st => { st.M += 10; }},
+  coffee:  {name:'커피',          min:1, c:0,  w:150, na:0,    caf:80, hint:'카페인 80mg'},
+  toilet:  {name:'화장실',        min:3, c:0,  w:0,   na:0,    caf:0,  hint:'화장실 비우기 · 속 편하게', fx:st => { st.B = 0; st.S = Math.max(0, st.S - 15); st.holding = false; if (Math.random() < 0.3){ st.t += 4; st.M -= 3; st.note = '간이화장실 줄이 7명. 다들 같은 표정이다. 4분 대기.'; } }},
+  rest:    {name:'의자에 앉아 쉬기', min:5, c:0, w:0, na:0,    caf:0,  hint:'멘탈↑ 근피로 조금↓', fx:st => { st.F -= 3; st.M += 8; st.Z += 3; }},
+  dropbag: {name:'드롭백 재보급', min:3, c:0,  w:0,   na:0,    caf:0,  hint:'보급품 충전 — 젤 8·카페인젤 2·바 2·소금 8', crew:true, fx:st => { st.inv = {...KIT, water: st.inv.water}; }},
+  socks:   {name:'양말·신발 교체', min:6, c:0, w:0,   na:0,    caf:0,  hint:'물집 해결', crew:true, fx:st => { st.blister = false; st.F -= 2; st.M += 5; }},
+  nap:     {name:'파워냅 15분',   min:15, c:0, w:0,   na:0,    caf:0,  hint:'졸음 리셋·멘탈↑↑', crew:true, fx:st => { st.Z = 5; st.M += 15; }},
+  massage: {name:'크루 마사지',   min:8, c:0,  w:0,   na:0,    caf:0,  hint:'근피로↓↓', crew:true, fx:st => { st.F -= 8; st.M += 4; }}
 };
+// Applies an item's nutrients: carbs go into the gut queue (S), fluid to H, sodium to Na, caffeine against sleepiness.
+function ingest(st, it){
+  const c = it.c || 0, w = it.w || 0, na = it.na || 0, caf = it.caf || 0;
+  if (c) st.S += c;
+  if (w){ st.H += w * 0.03; st.B += w * 0.02; if (!na) st.Na -= w * 0.004; }
+  if (na) st.Na += na * 0.02;
+  if (caf){
+    const recent = st.intake.filter(x => st.t - x.t < 180).reduce((a, x) => a + x.caf, 0);
+    st.Z -= caf * 0.3 / (1 + st.tot.caf / 400); // tolerance builds over the race
+    if (recent + caf > 300){ st.S += 10; st.M -= 4; } // too much caffeine: jitters and a sour stomach
+  }
+  if (c || w || na || caf){ st.intake.push({t: st.t, c, w, na, caf}); st.tot.c += c; st.tot.w += w; st.tot.na += na; st.tot.caf += caf; }
+  if (it.fx) it.fx(st);
+}
+// Eating again within 20 game-minutes adds +30% gut load per recent item (concentrated boluses sit heavier)
+const EAT_WINDOW = 20;
+function eatMult(st){ return 1 + 0.3 * (st.eats || []).filter(t => st.t - t < EAT_WINDOW).length; }
+function consume(st, it){
+  const m = eatMult(st), s0 = st.S;
+  ingest(st, it);
+  const dS = st.S - s0;
+  if (dS > 0 && it.c){ st.S += dS * (m - 1); st.eats = (st.eats || []).filter(t => st.t - t < EAT_WINDOW); st.eats.push(st.t); }
+}
+// What a sensible runner would reach for right now (shown as 추천 badges)
+function recommend(st, k){
+  const hi = hourIntake(st, 60), hc = clockHour(st.t), night = hc >= 21 || hc < 6;
+  const cafRecent = st.intake.filter(x => st.t - x.t < 180).reduce((a, x) => a + x.caf, 0);
+  const nextKm = CPS[Math.min(st.seg + 1, CPS.length - 1)].km - st.km;
+  switch (k){
+    case 'gel': return hi.c < 50 && st.S < 40 && st.inv.gel > 0;
+    case 'bar': return hi.c < 40 && st.S < 25 && nextKm > 8 && st.inv.bar > 0;
+    case 'caf': return st.Z > 45 && night && cafRecent < 150 && st.inv.caf > 0;
+    case 'salt': return (st.Na < 55 || hi.na < 250) && st.inv.salt > 0;
+    case 'water': return (st.H < 80 || hi.w < 450) && st.inv.water > 0;
+    case 'pee': return st.B > 70;
+    case 'cola': return (st.E < 60 || st.Z > 40) && st.S < 50;
+    case 'banana': return hi.c < 50 && st.S < 35;
+    case 'fruit': return st.H < 70;
+    case 'riceball': return hi.c < 45 && st.S < 25 && nextKm > 12;
+    case 'noodle': return (st.Na < 55 || (night && st.M < 50)) && st.S < 30;
+    case 'coffee': return st.Z > 45 && cafRecent < 150;
+    case 'toilet': return st.B > 50 || st.S > 60;
+    case 'rest': return st.M < 35;
+    case 'dropbag': return st.inv.gel < 5 || st.inv.salt < 4 || st.inv.caf < 1;
+    case 'socks': return st.blister;
+    case 'nap': return st.Z > 65;
+    case 'massage': return st.F > 60;
+  }
+  return false;
+}
 // ---------- rivals ----------
 const RIVAL_PRE = ['백록담','올레','현무암','돌하르방','조랑말','한라봉','곶자왈','바람의 섬','해녀','오름','귤밭','삼다수','성산','우도','협재','사려니','윗세','영실','관음사','성판악','가시리','표선','중문','애월','함덕','비자림','동백','유채꽃','감귤','흑돼지','갈치','몸국','고사리','억새','용눈이','새별','물영아리','따라비','다랑쉬','한라'];
 const RIVAL_SUF = ['질주자','사냥꾼','폭주기관차','다람쥐','산양','바람','러너','탐험가','방랑자','달리미','고라니','토끼','독수리','노루','날쌘돌이'];
@@ -520,7 +662,7 @@ const RIVALS = (() => {
   const rnd = mulberry32(4801), combos = [];
   for (const p of RIVAL_PRE) for (const q of RIVAL_SUF) combos.push(p + ' ' + q);
   for (let i = combos.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [combos[i], combos[j]] = [combos[j], combos[i]]; }
-  return combos.slice(0, RIVAL_N).map((n, i) => [n, Math.round(1335 + 865 * Math.pow(i / (RIVAL_N - 1), 1.35))]);
+  return combos.slice(0, RIVAL_N).map((n, i) => [n, Math.round(1355 + 850 * Math.pow(i / (RIVAL_N - 1), 1.35))]);
 })();
 function stdCum(){
   const d = derive({end:10,str:10,agi:10,dur:10,flex:10,dig:10,men:10});
@@ -681,7 +823,7 @@ function buildMap(){
   { const sc = 0.16, ix = MW - 0.82 * VIEW.kx * VIEW.s * sc - 26, iy = MH - 0.4 * VIEW.ky * VIEW.s * sc - 26, ins = COAST.map(p => [ix + (p[1] - 126.15) * VIEW.kx * VIEW.s * sc, iy + (33.575 - p[0]) * VIEW.ky * VIEW.s * sc]);
     const vx = ix + (VIEW.lon0 - 126.15) * VIEW.kx * VIEW.s * sc, vy = iy + (33.575 - VIEW.lat0) * VIEW.ky * VIEW.s * sc;
     s += `<g filter="url(#liftS)"><rect x="${ix - 8}" y="${iy - 8}" width="${(0.82 * VIEW.kx * VIEW.s * sc) + 16}" height="${(0.4 * VIEW.ky * VIEW.s * sc) + 16}" rx="10" fill="#fbf8f1" stroke="#2b2420" stroke-width="2"/></g><path d="${smoothClosed(ins)}" fill="#c6d58a" stroke="#2b2420" stroke-width="1.4"/><rect x="${vx}" y="${vy}" width="${MW * sc}" height="${MH * sc}" fill="none" stroke="#b9322a" stroke-width="2" stroke-dasharray="4 3"/>`; }
-  s += `</svg><div class="mapchips"><span class="chip" id="chipRank">순위 -</span><span class="chip" id="chipKm">0.0 km</span><span class="chip" id="chipEle">47 m</span></div>`;
+  s += `</svg><div class="quip" id="quip" aria-live="polite"><span>출발선. 다들 쓸데없이 상쾌해 보인다.</span></div><div class="mapchips"><span class="chip" id="chipRank">순위 -</span><span class="chip" id="chipKm">0.0 km</span><span class="chip" id="chipEle">47 m</span><span class="chip" id="chipSlope">▶ 평지</span></div>`;
   $('#mapbox').innerHTML = s;
   // tokens
   const rd = $('#rivalDots');
@@ -721,13 +863,18 @@ function autoPlay(st){
   let guard = 0;
   while (guard++ < 20000){
     const ev = advance(st, 10); if (!ev) continue;
-    if (ev.type === 'supply'){ if (st.E < 75 && st.inv.gel > 0){ ITEMS.gel.fx(st); st.inv.gel--; } if (st.Z > 50 && st.inv.caf > 0){ ITEMS.caf.fx(st); st.inv.caf--; } if (st.H < 75 && st.inv.water > 0){ ITEMS.water.fx(st); st.inv.water--; } if (st.Na < 55 && st.inv.salt > 0){ ITEMS.salt.fx(st); st.inv.salt--; } }
+    if (ev.type === 'supply'){ const hi = hourIntake(st, 60);
+      if (hi.c < 55 && st.S < 40){ if (st.inv.gel > 0){ consume(st, ITEMS.gel); st.inv.gel--; } else if (st.inv.bar > 0){ consume(st, ITEMS.bar); st.inv.bar--; } }
+      if (st.Z > 50 && st.inv.caf > 0){ consume(st, ITEMS.caf); st.inv.caf--; }
+      if (st.H < 80 && st.inv.water > 0){ consume(st, ITEMS.water); st.inv.water--; }
+      if (st.H < 65 && st.inv.water > 0){ consume(st, ITEMS.water); st.inv.water--; }
+      if (st.Na < 60 && st.inv.salt > 0){ consume(st, ITEMS.salt); st.inv.salt--; } }
     else if (ev.type === 'cp'){ const cp = CPS[ev.idx]; if (st.t > cp.cut) return null; if (ev.idx === CPS.length - 1) return st.t;
-      const pick = ['water','cola','banana']; if (st.B > 50 || st.S > 55) pick.push('toilet'); if (cp.menu.includes('riceball') && st.E < 60) pick.push('riceball');
-      if (cp.crew){ pick.push('dropbag'); if (st.Z > 50) pick.push('nap'); if (st.blister) pick.push('socks'); } if (cp.menu.includes('coffee') && st.Z > 40) pick.push('coffee');
-      for (const p of pick){ FOOD[p].fx(st); st.t += FOOD[p].min; } st.holding = false; st.seg++; }
+      const pick = ['water','cola']; if (st.S < 30) pick.push('banana'); if (st.B > 50 || st.S > 55) pick.push('toilet'); if (cp.menu.includes('riceball') && st.E < 60 && st.S < 30) pick.push('riceball');
+      if (cp.crew){ pick.push('dropbag'); if (st.Z > 55) pick.push('nap'); if (st.blister) pick.push('socks'); if (st.Na < 60 && cp.menu.includes('noodle') && st.S < 30) pick.push('noodle'); } if (cp.menu.includes('coffee') && st.Z > 45) pick.push('coffee');
+      for (const p of pick){ consume(st, FOOD[p]); st.t += FOOD[p].min; } st.holding = false; st.seg++; }
     else if (ev.type === 'fall'){ st.t += 3; st.F += 6; st.M -= 8; } else if (ev.type === 'cramp') st.t += 3; else if (ev.type === 'gi'){ st.t += 5; st.S -= 30; st.B = 0; }
-    else if (ev.type === 'bonk'){ if (st.inv.gel > 0){ ITEMS.gel.fx(st); st.inv.gel--; } } else if (ev.type === 'quit') st.M = 25;
+    else if (ev.type === 'bonk'){ if (st.inv.gel > 0){ consume(st, ITEMS.gel); st.inv.gel--; } } else if (ev.type === 'quit') st.M = 25;
     clamp(st);
   }
   return null;
@@ -771,9 +918,20 @@ $('#cplist').innerHTML = CPS.slice(1).map((c, i) => `<span>${i + 1 === 12 ? 'F' 
 // ---------- race ----------
 let running = false, lastPace = '', st = null, rivals = [], speed = 1, modalOpen = false, lastT = 0, raf = 0, lastRender = 0, finished = false;
 const GAME_MIN_PER_SEC = 6;
-const GAUGES = [['E','에너지',0],['H','수분',0],['Na','전해질',0],['M','멘탈',0],['S','위장 부담',1],['F','근피로',1],['Z','졸음',1],['B','화장실',1]];
+const GAUGES = [['E','에너지',0],['H','수분',0],['Na','전해질',0],['M','멘탈',0],['S','위 속 탄수',1],['F','근피로',1],['Z','졸음',1],['B','화장실',1]];
+const TARGETS = [['c','탄수화물','g/h',50,70,100],['w','수분','ml/h',450,750,1000],['na','나트륨','mg/h',300,600,1000]];
+function intakeHTML(compact){
+  const hi = hourIntake(st, 60);
+  return `<div class="intake ${compact ? 'compact' : ''}"><div class="lbl">최근 60분 섭취 · 목표 구간</div>${TARGETS.map(([k, n, u, lo, hi2, max]) => {
+    const v = hi[k], pct = Math.min(100, v / max * 100), ok = v >= lo && v <= hi2, col = ok ? '#7fae4e' : v < lo ? (v < lo * 0.6 ? '#b9322a' : '#f2c230') : '#f29a2e';
+    return `<div class="im"><div class="gl"><span>${n}</span><span class="num">${Math.round(v)} ${u}</span></div><div class="gb ib"><i style="width:${pct}%;background:${col}"></i><b style="left:${lo / max * 100}%;width:${(hi2 - lo) / max * 100}%"></b></div></div>`;
+  }).join('')}</div>`;
+}
+function slopeNow(){ const g = (elevAt(st.km + 0.3) - elevAt(st.km)) / 300 * 100; return g; }
 function gColor(v, rev){ const x = rev ? 100 - v : v; return x > 50 ? '#7fae4e' : x > 25 ? '#f2c230' : '#b9322a'; }
-function gaugeHTML(keys){ return GAUGES.filter(g => !keys || keys.includes(g[0])).map(([k, n, rev]) => `<div class="g"><div class="gl"><span>${n}</span><span>${Math.round(st[k])}</span></div><div class="gb"><i style="width:${st[k]}%;background:${gColor(st[k], rev)}"></i></div></div>`).join(''); }
+function gaugeHTML(keys){ return GAUGES.filter(g => !keys || keys.includes(g[0])).map(([k, n, rev]) => {
+  const cap = k === 'E' ? eMax(st) : 100;
+  return `<div class="g"><div class="gl"><span>${n}</span><span>${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${gColor(k === 'E' ? st[k] / cap * 100 : st[k], rev)}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; }).join(''); }
 function statusTags(){
   const t = [];
   if (st.E < 25) t.push('에너지 고갈'); if (st.H < 30) t.push('탈수'); if (st.Na < 25) t.push('전해질 부족'); if (st.S > 70) t.push('속이 더부룩');
@@ -817,13 +975,14 @@ function renderRace(full){
   $('#chipKm').textContent = st.km.toFixed(1) + ' / 148.8 km';
   $('#chipEle').textContent = Math.round(elevAt(st.km)).toLocaleString() + ' m';
   $('#tbSub').textContent = `배번 ${me.bib} · ${PACE[st.pace].name} · 페이스 ${fmtPace(60 / speedNow(st))} /km`;
-  $('#gauges').innerHTML = gaugeHTML() + `<div class="status">${statusTags()}</div>`;
+  $('#gauges').innerHTML = gaugeHTML() + `<div class="status">${statusTags()}</div>` + intakeHTML(true);
+  { const g = slopeNow(), el = $('#chipSlope'); el.textContent = g > 3 ? `▲ 업힐 ${g.toFixed(0)}%` : g < -3 ? `▼ 다운힐 ${Math.abs(g).toFixed(0)}%` : `▶ 평지 ${g.toFixed(0)}%`; el.style.background = g > 3 ? '#f3c1bb' : g < -3 ? '#cfe1f3' : 'var(--card)'; }
   const nx = CPS[st.seg + 1], eta = st.t + estTo(nx.km), margin = nx.cut - eta;
   $('#nextBox').innerHTML = `<div class="lbl">다음 ${st.seg + 1 === CPS.length - 1 ? '피니시' : 'CP' + (st.seg + 1)}${nx.crew ? ' · 크루' : ''}</div><div style="font-family:var(--display);font-size:20px">${nx.name}</div>
     <div class="row"><span>남은 거리</span><b class="num">${(nx.km - st.km).toFixed(1)} km</b></div>
     <div class="row"><span>예상 도착</span><b class="num">${fmtClock(eta)}</b></div>
     <div class="row"><span>컷오프</span><b class="num ${margin < 30 ? 'warn' : ''}">${fmtClock(nx.cut)} (여유 ${margin < 0 ? '−' + fmtDur(-margin) : fmtDur(margin)})</b></div>
-    <div class="row"><span>보급 주머니</span><b class="num" style="font-size:14px">젤 ${st.inv.gel} · 카페인 ${st.inv.caf} · 바 ${st.inv.bar} · 소금 ${st.inv.salt} · 물 ${st.inv.water}/4</b></div>`;
+    <div class="row"><span>보급 주머니</span><b class="num" style="font-size:14px">젤 ${st.inv.gel} · 카페인 ${st.inv.caf} · 바 ${st.inv.bar} · 소금 ${st.inv.salt} · 물 ${st.inv.water}/${WATER_MAX}</b></div>`;
   const top = sd.slice(0, 6); if (myRank > 6) top.push(sd[myRank - 1]);
   const lead = sd[0];
   $('#ranks').innerHTML = top.map(x => { const r = sd.indexOf(x) + 1; const info = x.fin != null ? '완주 ' + fmtDur(x.fin) : (x === lead ? x.km.toFixed(1) + 'km' : '−' + (lead.fin != null ? (TOTAL_KM - x.km) : (lead.km - x.km)).toFixed(1) + 'km'); return `<div class="rk-row ${x.me ? 'me' : ''}"><span>${r}</span><span class="n">${esc(x.name)}</span><span class="d">${info}</span></div>`; }).join('');
@@ -836,7 +995,7 @@ $('#paceset').addEventListener('click', e => { const b = e.target.closest('butto
 $('#supplyBtn').addEventListener('click', () => { if (!modalOpen) openSupply(false); });
 
 function startRace(){
-  st = newRunner(stats); finished = false; lastPace = '';
+  st = newRunner(stats); finished = false; lastPace = ''; quipLast = performance.now(); quipKey = ''; quipRecent = [];
   rivals = makeRivals(Math.floor(Math.random() * 1e9));
   $('#scrSetup').hidden = true; $('#scrResult').hidden = true; $('#scrRace').hidden = false;
   $('#tbPortrait').innerHTML = runnerSVG(me.color, me.bib, 44, false);
@@ -857,7 +1016,7 @@ function loop(now){
     const ev = advance(st, dt * GAME_MIN_PER_SEC * speed);
     if (ev) handleEvent(ev);
   }
-  if (!finished && !st.dnf) renderRace(false);
+  if (!finished && !st.dnf){ renderRace(false); if (!modalOpen && speed > 0) quip(false); }
   raf = requestAnimationFrame(loop);
 }
 // ---------- supply icons (paper cut-out) ----------
@@ -883,12 +1042,16 @@ const IC = {
 };
 function iconSVG(k, size){ return `<svg viewBox="0 0 32 32" width="${size || 34}" height="${size || 34}" aria-hidden="true" style="flex:none;display:block;overflow:visible"><g stroke="#2b2420" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">${IC[k] || ''}</g></svg>`; }
 // ---------- effect messages ----------
-const FX_LABEL = {E:['에너지',0],H:['수분',0],Na:['전해질',0],M:['멘탈',0],S:['위장 부담',1],F:['근피로',1],Z:['졸음',1],B:['화장실',1]};
-function snap(){ return {E:st.E,H:st.H,Na:st.Na,M:st.M,S:st.S,F:st.F,Z:st.Z,B:st.B, water:st.inv.water, blister:st.blister, inv:Object.values(st.inv).reduce((a,b)=>a+b,0)}; }
+const FX_LABEL = {E:['에너지',0],H:['수분',0],Na:['전해질',0],M:['멘탈',0],S:['위 속 탄수',1],F:['근피로',1],Z:['졸음',1],B:['화장실',1]};
+function snap(){ return {tc:st.tot.c, tw:st.tot.w, tna:st.tot.na, tcaf:st.tot.caf, E:st.E,H:st.H,Na:st.Na,M:st.M,S:st.S,F:st.F,Z:st.Z,B:st.B, water:st.inv.water, blister:st.blister, inv:Object.values(st.inv).reduce((a,b)=>a+b,0)}; }
 function diffFx(a, b){
   const out = [];
   for (const k of Object.keys(FX_LABEL)){ const d = Math.round(b[k] - a[k]); if (Math.abs(d) >= 1){ const [n, rev] = FX_LABEL[k]; out.push({t: n + ' ' + (d > 0 ? '+' : '−') + Math.abs(d), good: rev ? d < 0 : d > 0}); } }
-  if (b.water > a.water) out.push({t:'물 ' + b.water + '모금 충전', good:true});
+  if (b.tc > a.tc) out.unshift({t:'탄수 ' + Math.round(b.tc - a.tc) + 'g 흡수 대기', good:true});
+  if (b.tw > a.tw) out.unshift({t:'물 ' + Math.round(b.tw - a.tw) + 'ml', good:true});
+  if (b.tna > a.tna) out.unshift({t:'나트륨 ' + Math.round(b.tna - a.tna) + 'mg', good:true});
+  if (b.tcaf > a.tcaf) out.unshift({t:'카페인 ' + Math.round(b.tcaf - a.tcaf) + 'mg', good:true});
+  if (b.water > a.water) out.push({t:'물 ' + (b.water * 250) + 'ml로 충전', good:true});
   if (a.blister && !b.blister) out.push({t:'물집 해결', good:true});
   if (b.inv > a.inv + 1) out.push({t:'보급 주머니 가득', good:true});
   return out;
@@ -897,10 +1060,63 @@ function fxChips(list){ return list.map(x => `<span class="fx ${x.good ? 'up' : 
 function fxText(list){ return list.map(x => x.t).join(' · '); }
 function previewFx(keys){
   const save = JSON.stringify(st), a = snap();
-  for (const k of keys) FOOD[k].fx(st); clamp(st);
+  for (const k of keys) consume(st, FOOD[k]); clamp(st);
   const b = snap(); const r = diffFx(a, b);
   const back = JSON.parse(save); Object.assign(st, back); st.d = derive(st.s);
   return r;
+}
+
+// ---------- runner monologue (black comedy) ----------
+const QUIPS = {
+  bonk:  ['몸이 배터리 1%에서 업데이트를 하겠냐고 묻는다.','젤 하나에 영혼을 팔 수 있다. 시세는 많이 떨어졌지만.','다리가 파업 중. 요구사항은 탄수화물 하나.','방금 내 그림자가 나를 추월했다.'],
+  dry:   ['땀이 안 난다. 몸이 수분을 사치품으로 분류했다.','입안이 현무암이다. 구멍까지 똑같다.','물 생각을 너무 해서 바다가 맛있어 보인다.'],
+  salt:  ['종아리가 쥐 날 타이밍을 재고 있다. 눈치가 보인다.','몸에서 소금기가 빠져나간다. 이제 싱거운 사람이 됐다.'],
+  gut:   ['위장이 오늘부로 퇴사 의사를 밝혔다.','지금 방귀는 도박이다. 판돈이 너무 크다.','배 속에서 젤들이 회의 중. 결론은 \'밖으로\'.','먹은 게 다 위에 줄 서 있다. 소화 대기 번호 37번.'],
+  legs:  ['허벅지가 내 이름을 모른다고 한다.','무릎이 유언장을 쓰고 있다. 상속자는 정형외과.','다리가 내 말을 안 듣는다. 원래도 안 들었지만.'],
+  sleep: ['방금 돌하르방이 나한테 인사했다. 아마도.','눈 뜨고 자는 법을 터득했다. 달리는 건 몸이 알아서 한다.','나무가 사람처럼 보인다. 사람이 나무처럼 보이면 더 큰일이다.'],
+  pee:   ['화장실 생각뿐이다. 인생 우선순위 정리 완료.','방광이 컷오프보다 먼저 온다.','적당한 덤불을 찾는 눈이 독수리처럼 예리해졌다.','방광이 나보다 먼저 결승선에 가려고 한다.'],
+  mind:  ['왜 돈 내고 이걸 하고 있지? 그것도 추첨까지 해서.','완주 메달은 결국 서랍에 들어간다. 알면서도 간다.','다음 생엔 그냥 귤 농사 짓는다.'],
+  blister:['발바닥 물집이 자기 동네를 만들었다. 이장도 뽑았다.','한 걸음마다 발이 나한테 리뷰를 남긴다. 별 한 개.'],
+  hold:  ['참는 중. 이건 레이스가 아니라 수행이다.','지금 이 순간, 표정 관리가 제일 어려운 종목이다.'],
+  cramp: ['종아리가 독립선언을 했다.','근육이 돌처럼 굳었다. 제주답다.'],
+  cutoff:['컷오프가 뒤에서 숨을 쉰다. 입냄새까지 느껴진다.','시계를 보면 안 된다. 시계도 나를 안 보고 싶어 한다.'],
+  up:    ['오르막이 끝나면 더 큰 오르막이 있다. 한라산은 거짓말을 안 한다.','방금 등산객이 나를 추월했다. 그분은 지팡이를 짚었다.','오르막에서 뛰는 척하는 중. 아무도 속지 않는다.'],
+  down:  ['중력은 공짜인데 무릎값은 내가 낸다.','내리막에서 넘어지면 빠르긴 하다.'],
+  night: ['헤드랜턴 불빛 안에서만 세상이 존재한다. 철학 아님, 그냥 졸림.','어둠 속에서 뭔가 반짝인다. 노루 눈이거나, 환각이거나.'],
+  front: ['내가 상위권? 다들 길을 잃은 게 분명하다.','앞에 아무도 없다. 길을 잘못 든 건 아니겠지.'],
+  back:  ['뒤에서 1등 노리는 중. 경쟁이 치열하지 않아 유리하다.','앞사람 헤드랜턴이 별처럼 멀다.'],
+  push:  ['밀어붙이는 중. 미래의 나에게 청구서를 보내는 중.','지금 신나는 건 나중의 내가 갚는다.'],
+  easy:  ['아끼는 중. 뭘 아끼는지는 나도 모른다.','천천히 가는 것도 전략이다. 라고 나에게 말해 주는 중.'],
+  fine:  ['아직 괜찮다. 이 문장을 몇 시간 뒤에 후회할 예정.','기분이 좋다. 분명 뭔가 잘못됐다는 신호다.','148.8km라니. 차로 가도 멀다.','제주 바람이 응원해 준다. 아니, 그냥 맞바람이다.','오늘의 목표: 살아서 경기장 보기.']
+};
+let quipLast = 0, quipKey = '', quipRecent = [];
+function quipCandidates(){
+  const c = [], g = (elevAt(st.km + 0.3) - elevAt(st.km)) / 300, hc = clockHour(st.t);
+  const nx = CPS[st.seg + 1], margin = nx.cut - (st.t + estTo(nx.km));
+  if (st.cramp > 0) c.push(['cramp', 9]); if (st.holding) c.push(['hold', 9]);
+  if (st.E < 20) c.push(['bonk', 8]); if (margin < 30) c.push(['cutoff', 8]); if (st.M < 20) c.push(['mind', 7]);
+  if (st.S > 70) c.push(['gut', 7]); if (st.H < 30) c.push(['dry', 7]); if (st.Z > 65) c.push(['sleep', 6]);
+  if (st.B > 80) c.push(['pee', 6]); if (st.F > 65) c.push(['legs', 5]); if (st.Na < 25) c.push(['salt', 5]); if (st.blister) c.push(['blister', 4]);
+  if (g > 0.1) c.push(['up', 3]); if (g < -0.1) c.push(['down', 3]);
+  if (hc >= 21 || hc < 5) c.push(['night', 2]);
+  const sd = standings(), r = sd.findIndex(x => x.me) + 1;
+  if (r <= 5 && st.km > 3) c.push(['front', 2]); if (r > sd.length * 0.7) c.push(['back', 2]);
+  if (st.pace === 'push') c.push(['push', 2]); if (st.pace === 'easy') c.push(['easy', 1]);
+  c.push(['fine', 0]);
+  return c.sort((a, b) => b[1] - a[1]);
+}
+function quip(force){
+  const now = performance.now();
+  const c = quipCandidates(), top = c[0][0];
+  if (!force && top === quipKey && now - quipLast < 16000) return;
+  if (!force && now - quipLast < 5000) return;
+  const key = Math.random() < 0.7 ? top : c[Math.floor(Math.random() * Math.min(3, c.length))][0];
+  const pool = QUIPS[key].filter(q => !quipRecent.includes(q)), line = (pool.length ? pool : QUIPS[key])[Math.floor(Math.random() * (pool.length || QUIPS[key].length))];
+  quipRecent.push(line); if (quipRecent.length > 8) quipRecent.shift();
+  quipKey = top; quipLast = now;
+  const el = document.getElementById('quip'); if (!el) return;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  el.querySelector('span').textContent = line;
 }
 
 // ---------- modals ----------
@@ -912,20 +1128,20 @@ function showModal({kick, title, body, choices, gauges}){
   $('#modalRoot').querySelectorAll('[data-ch]').forEach(b => b.addEventListener('click', () => { const c = choices[+b.dataset.ch]; closeModal(); const a = st ? snap() : null; c.act && c.act(); if (!st) return; clamp(st); const fx = a ? diffFx(a, snap()) : []; if (fx.length && !st.dnf) toast(fxText(fx)); renderRace(true); }));
   const f = $('#modalRoot').querySelector('[data-ch]'); f && f.focus();
 }
-function useItem(k){ if (st.inv[k] <= 0) return; st.inv[k]--; ITEMS[k].fx(st); st.t += ITEMS[k].min; clamp(st); }
+function useItem(k){ if (st.inv[k] <= 0) return; st.inv[k]--; consume(st, ITEMS[k]); st.t += ITEMS[k].min; clamp(st); }
 function openSupply(auto){
   modalOpen = true;
   const flavor = ['숨을 고르며 주머니를 뒤진다.','오르막 전에 뭐라도 넣어 둘까?','발걸음을 늦추고 보급 타이밍.','목이 마르다. 뭐부터 먹지?'];
   const used = []; let last = null;
   const draw = () => {
-    const opts = Object.entries(ITEMS).map(([k, it]) => `<button type="button" class="opt" data-it="${k}" ${st.inv[k] <= 0 ? 'disabled' : ''}>${iconSVG(k)}<span class="ot"><span class="on">${it.name}</span><span class="oh">${it.hint}</span></span><span class="cnt">${st.inv[k]}</span></button>`).join('')
-      + (st.B > 45 ? `<button type="button" class="opt" data-it="pee">${iconSVG('pee')}<span class="ot"><span class="on">노상 볼일</span><span class="oh">화장실 비우기 · 1.5분</span></span></button>` : '');
+    const opts = Object.entries(ITEMS).map(([k, it]) => `<button type="button" class="opt ${recommend(st, k) ? 'rec' : ''}" data-it="${k}" ${st.inv[k] <= 0 ? 'disabled' : ''}>${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k)}<span class="ot"><span class="on">${it.name}</span><span class="oh">${it.hint}</span></span><span class="cnt">${st.inv[k]}</span></button>`).join('')
+      + (st.B > 45 ? `<button type="button" class="opt ${recommend(st, 'pee') ? 'rec' : ''}" data-it="pee">${recommend(st, 'pee') ? '<span class="recb">추천</span>' : ''}${iconSVG('pee')}<span class="ot"><span class="on">노상 볼일</span><span class="oh">화장실 비우기 · 1.5분</span></span></button>` : '');
     $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">${st.km.toFixed(1)} km · ${fmtClock(st.t)}</div><h3 id="mTitle">${auto ? '보급 타이밍' : '보급 꺼내기'}</h3>
       ${last ? `<div class="fxline" role="status">${iconSVG(last.k, 28)}<div><b>${last.name}</b> 먹음<div class="fxs">${fxChips(last.fx) || '<span class="fx">변화 없음</span>'}</div></div></div>` : `<p>${auto ? flavor[Math.floor(st.km) % flavor.length] : '걸으면서 주머니에서 꺼내 먹어요.'}</p>`}
-      <div class="mini">${gaugeHTML()}</div><div class="opts">${opts}</div><div class="mbtns"><button type="button" class="btn primary" id="supDone">${used.length ? '계속 달리기' : '패스하고 달리기'}</button></div></div></div>`;
+      ${eatMult(st) > 1 ? `<div class="sumline warn">연속으로 먹는 중 — 다음 보급은 위장 부담 <b class="num">×${eatMult(st).toFixed(1)}</b></div>` : ''}<div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div><div class="mbtns"><button type="button" class="btn primary" id="supDone">${used.length ? '계속 달리기' : '패스하고 달리기'}</button></div></div></div>`;
     $('#modalRoot').querySelectorAll('[data-it]').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.it, a = snap();
-      if (k === 'pee'){ st.B = 0; st.t += 1.5; st.M -= 1; }
+      if (k === 'pee'){ st.B = 0; st.t += 1.5; st.M -= 1; const hc = clockHour(st.t); if ((hc >= 19.5 || hc < 6) && Math.random() < 0.4){ st.M -= 2; toast('볼일 중 뒤 주자 헤드랜턴 다섯 개가 나를 비췄다. 무대 데뷔.'); addLog('헤드랜턴 조명 아래 노상 볼일'); } else if (Math.random() < 0.25){ toast('바람 방향을 잘못 읽었다. 신발이 조금 젖었다.'); st.M -= 2; } }
       else useItem(k);
       clamp(st);
       const name = k === 'pee' ? '노상 볼일' : ITEMS[k].name, fx = diffFx(a, snap());
@@ -950,9 +1166,9 @@ function arriveCP(idx){
   const sel = new Set();
   const draw = () => {
     const stop = [...sel].reduce((a, k) => a + FOOD[k].min, 0), dep = st.t + stop, margin = cp.cut - dep;
-    const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span><span class="oh">${FOOD[k].hint}</span></span><span class="om">${FOOD[k].min}분</span></button>`).join('');
+    const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''} ${recommend(st, k) ? 'rec' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span><span class="oh">${k === 'water' ? `남은 물 ${st.inv.water * 250}ml → 1.5L` : FOOD[k].hint}</span></span><span class="om" ${k === 'water' ? 'style="right:24px"' : ''}>${FOOD[k].min}분</span>${k === 'water' ? `<span class="cnt" style="background:${st.inv.water <= 1 ? '#e8a09a' : '#8ec9d8'}">${st.inv.water}</span>` : ''}</button>`).join('');
     const pv = sel.size ? previewFx([...sel]) : [];
-    $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">CP${idx}${cp.crew ? ' · 크루 CP' : ''} · ${cp.km} km · 현재 ${rank}위</div><h3 id="mTitle">${cp.name}</h3><div class="mini">${gaugeHTML()}</div><div class="opts">${opts}</div>
+    $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">CP${idx}${cp.crew ? ' · 크루 CP' : ''} · ${cp.km} km · 현재 ${rank}위</div><h3 id="mTitle">${cp.name}</h3><div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div>
       ${sel.size ? `<div class="fxline"><div><b>먹고 나면</b><div class="fxs">${fxChips(pv) || '<span class="fx">변화 없음</span>'}</div></div></div>` : ''}
       <div class="sumline"><span>정차 <b class="num">${stop}분</b> · 출발 <b class="num">${fmtClock(dep)}</b></span><span class="${margin < 20 ? 'warn' : ''}">컷오프 ${fmtClock(cp.cut)} · 여유 <b class="num">${margin < 0 ? '초과!' : fmtDur(margin)}</b></span></div>
       <div class="mbtns"><button type="button" class="btn" id="cpPass">그냥 통과</button><button type="button" class="btn primary" id="cpGo" ${sel.size ? '' : 'disabled'}>먹고 출발</button></div></div></div>`;
@@ -962,19 +1178,33 @@ function arriveCP(idx){
   };
   const depart = list => {
     const a = snap();
-    for (const k of list){ FOOD[k].fx(st); st.t += FOOD[k].min; }
+    for (const k of list){ consume(st, FOOD[k]); st.t += FOOD[k].min; }
     clamp(st); const fx = diffFx(a, snap());
-    if (list.length && fx.length) toast(`CP${idx} 보급 효과 — ${fxText(fx)}`);
+    if (st.note){ toast(st.note); addLog(st.note); st.note = null; } else if (list.length && fx.length) toast(`CP${idx} 보급 효과 — ${fxText(fx)}`);
     clamp(st); st.splits[st.splits.length - 1].dep = st.t; st.stopMin += st.t - arr;
     closeModal();
     if (st.t > cp.cut){ st.dnf = {where: cp.name, why: `${cp.name}에서 오래 머물러 컷오프(${fmtClock(cp.cut)})를 넘겼어요.`}; return endRace(); }
     addLog(list.length ? `CP${idx}: ${list.map(k => FOOD[k].name).join(', ')}${fx.length ? ' — ' + fxText(fx) : ''}` : `CP${idx} 통과`);
-    st.seg++; st.nextSupply = st.km + 4 + Math.random() * 2; renderRace(true);
+    st.seg++; st.lace = false; renderRace(true);
   };
   modalOpen = true; draw(); renderRace(true);
 }
 function handleEvent(ev){
   if (ev.type === 'scenic'){ toast(ev.text); addLog(ev.text); return; }
+  if (ev.type === 'fun'){
+    const f = ev.f;
+    if (!f.modal){ const a = snap(); st.M += f.M; if (f.F) st.F += f.F; if (f.carbs) ingest(st, {c:f.carbs, w:0, na:0, caf:0}); clamp(st); const fx = diffFx(a, snap()); toast(f.text + (fx.length ? ' (' + fxText(fx) + ')' : '')); addLog(f.text); return; }
+    if (f.choices) return showModal({kick:'레이스 중 사건', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:f.choices.map(c => ({label:c.label, primary:c.primary, act(){
+      if (c.t) st.t += c.t; if (c.M) st.M += c.M; if (c.F) st.F += c.F; if (c.S) st.S = Math.max(0, st.S + c.S); if (c.B) st.B = Math.max(0, st.B + c.B); if (c.hold) st.holding = true;
+      if (c.risk === 'fall') st.lace = true; addLog(c.log); }}))});
+    if (f.id === 'boar') return showModal({kick:'야생동물', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:[
+      {label:'조용히 뒷걸음질 (2분)', act(){ st.t += 2; st.M -= 4; addLog('멧돼지를 피해 조용히 우회'); }},
+      {label:'소리 지르며 지나간다', primary:true, act(){ st.M -= 8; st.F += 3; st.Z -= 15; addLog('멧돼지에게 고함치며 통과. 잠은 확 깼다'); }}]});
+    if (f.id === 'lost') return showModal({kick:'길 찾기', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:[
+      {label:'마지막 리본까지 되돌아간다 (6분)', act(){ st.t += 6; st.M -= 5; addLog('리본까지 되돌아감'); }},
+      {label:'GPS 확인 (2분, 운에 맡김)', primary:true, act(){ st.t += 2; if (Math.random() < 0.5){ st.t += 7; st.M -= 8; addLog('GPS를 믿었다가 더 헤맸다'); toast('GPS를 믿었는데… 더 헤맸다. 7분 손해.'); } else addLog('GPS 확인, 제 길이었다'); }}]});
+    return;
+  }
   if (ev.type === 'supply') return openSupply(true);
   if (ev.type === 'cp') return arriveCP(ev.idx);
   const E = {
@@ -986,7 +1216,7 @@ function handleEvent(ev){
       {label:'스트레칭 (3분)', act(){ st.t += 3; st.cramp = 0; st.Na += 0; addLog('쥐 — 스트레칭'); }},
       {label:'참고 절뚝이며 간다', act(){ st.cramp = 15; st.M -= 5; addLog('쥐 — 참고 진행'); }}]},
     gi: {kick:'위장 트러블', title:'배가 신호를 보낸다…', body:'<p>너무 많이 먹었나. 지금 당장 해결하지 않으면 곤란하다.</p>', choices:[
-      {label:'숲으로 (5분)', primary:true, act(){ st.t += 5; st.S -= 30; st.B = 0; st.M -= 3; addLog('숲에서 급한 일 해결'); }},
+      {label:'숲으로 (5분)', primary:true, act(){ st.t += 5; st.S -= 30; st.B = 0; st.M -= 3; addLog('숲에서 급한 일 해결. 제주 나뭇잎의 품질에 감사'); }},
       {label:'다음 CP까지 참는다', act(){ st.holding = true; st.M -= 8; addLog('배를 움켜쥐고 참는 중'); }}]},
     blister: {kick:'발', title:'발바닥에 물집이 잡혔다', body:'<p>한 걸음마다 따끔하다. 크루 CP에서 양말·신발을 갈아 신으면 나아진다.</p>', choices:[{label:'확인', primary:true, act(){ addLog('물집 발생'); }}]},
     bonk: {kick:'봉크', title:'다리에 힘이 안 들어간다', body:'<p>에너지가 바닥났다. 손이 떨린다.</p>', choices:[
@@ -1013,6 +1243,7 @@ async function endRace(){
     <div class="bigtime"><div class="medal ${ok ? '' : 'dnf'}"><b>${ok ? rank : '−'}</b><span>${ok ? '위 / ' + sd.length : 'DNF'}</span></div><div><div class="v">${ok ? fmtDur(st.t, true) : st.km.toFixed(1) + ' km'}</div><div style="color:var(--muted)">${ok ? fmtClock(st.t) + ' 도착 · ' + esc(me.name) : esc(st.dnf.why)}</div></div></div>
     ${ok ? `<p style="margin:0;font-family:var(--display);font-size:18px">${rank === 1 ? '가상 1위! 트랜스제주 100마일 우승이에요.' : `가상 1위 ${esc(rivals[0].name)}(${fmtDur(rivals[0].target)})까지 ${fmtDur(st.t - sd[0].fin)} 차이.`}</p>` : ''}
     <div style="font-size:13px;color:var(--muted)">빌드: ${top} · CP 정차 합계 ${Math.round(st.stopMin)}분</div>
+    ${nutritionSummary()}
     <div class="tablewrap"><table class="splits"><thead><tr><th>지점</th><th>도착</th><th>구간</th><th>정차</th><th>순위</th></tr></thead><tbody>${rows || '<tr><td colspan="5">기록된 CP가 없어요</td></tr>'}</tbody></table></div>
     <div id="submitNote" style="font-size:14px;color:var(--muted)"></div>
     <div class="mbtns" style="justify-content:flex-start"><button type="button" class="btn primary" id="againBtn">같은 빌드로 다시</button><button type="button" class="btn" id="backBtn">스탯 다시 짜기</button></div>`;
@@ -1026,6 +1257,15 @@ async function endRace(){
     else $('#submitNote').textContent = '공용 기록판에 연결되지 않아 이 기기에만 저장했어요.';
   }
   renderBoards();
+}
+function nutritionSummary(){
+  const hrs = Math.max(1, st.t / 60), buckets = [];
+  for (let h = 0; h < Math.floor(hrs); h++) buckets.push(st.intake.filter(x => x.t >= h * 60 && x.t < (h + 1) * 60).reduce((a, x) => a + x.c, 0));
+  const avg = buckets.reduce((a, b) => a + b, 0) / (buckets.length || 1), sd = Math.sqrt(buckets.reduce((a, b) => a + (b - avg) ** 2, 0) / (buckets.length || 1));
+  const steady = Math.max(0, Math.round(100 - (avg ? sd / avg * 100 : 100)));
+  const c = st.tot.c / hrs, w = st.tot.w / hrs, na = st.tot.na / hrs;
+  const note = c >= 55 ? '100마일 완주자 평균(약 66g/h)에 가까운 보급이에요.' : c >= 40 ? '탄수 섭취가 조금 부족했어요. 실제 100마일 완주자는 시간당 약 66g을 먹어요.' : '탄수 섭취가 많이 모자랐어요. 미완주자 평균(약 42g/h) 수준이에요.';
+  return `<div class="sumline" style="flex-direction:column;align-items:flex-start;gap:4px"><span>시간당 평균 · 탄수 <b class="num">${Math.round(c)}g</b> · 물 <b class="num">${Math.round(w)}ml</b> · 나트륨 <b class="num">${Math.round(na)}mg</b> · 카페인 총 <b class="num">${Math.round(st.tot.caf)}mg</b></span><span>보급 꾸준함 <b class="num">${steady}점</b> — 시간대별 탄수 섭취가 고를수록 높아요.</span><span style="color:var(--muted)">${note}</span></div>`;
 }
 // ---------- leaderboard ----------
 let records = [], boardState = 'loading';
