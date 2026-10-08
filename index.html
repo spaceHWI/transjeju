@@ -102,11 +102,13 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .mapbox svg{display:block;width:100%;height:auto}
 .quip{position:absolute;left:50%;top:12px;transform:translateX(-50%) rotate(-1deg);max-width:min(78%,520px);background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--shadow);padding:7px 14px;font-family:var(--display);font-size:16px;line-height:1.3;text-align:center;pointer-events:none;z-index:2}
 .quip::after{content:'';position:absolute;left:50%;bottom:-9px;width:14px;height:14px;background:var(--card);border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:translateX(-50%) rotate(45deg)}
+.quip.float{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:30;max-width:min(92%,560px)}
 .quip .fxs{justify-content:center;margin-top:5px}
 .quip.event{background:#fff1b8}
 .quip.pop{animation:quipIn .35s ease-out}
 @keyframes quipIn{from{opacity:0;transform:translateX(-50%) translateY(-8px) rotate(-3deg)}to{opacity:1;transform:translateX(-50%) rotate(-1deg)}}
 @media (max-width:560px){.quip{font-size:13px;padding:5px 10px;max-width:88%}}
+.mapbox{transition:background .6s}.mapbox.isNight{background:#22305a}
 .mapchips{position:absolute;left:10px;bottom:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
 .chip{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:3px 9px;font-family:var(--display);font-size:14px;box-shadow:2px 2px 0 var(--shadow)}
 .side{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -792,9 +794,10 @@ function buildMap(){
 <filter id="lift" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="4" stdDeviation="0" flood-color="#2b2420" flood-opacity=".22"/></filter>
 <filter id="liftS" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="1.5" dy="2.5" stdDeviation="0" flood-color="#2b2420" flood-opacity=".28"/></filter>
 <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .17  0 0 0 0 .14  0 0 0 0 .12  0 0 0 .5 0"/></filter>
+<radialGradient id="lampG"><stop offset="0" stop-color="#fff3b0" stop-opacity=".75"/><stop offset=".55" stop-color="#ffe680" stop-opacity=".25"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient>
 <clipPath id="isl"><path d="${coast}"/></clipPath>
 </defs>
-<rect width="${MW}" height="${MH}" fill="#8ec9d8"/>`;
+<g id="mapBase" style="transition:filter .6s"><rect width="${MW}" height="${MH}" fill="#8ec9d8"/>`;
   for (let i = 0; i < 9; i++){ const y = 40 + i * 92, x0 = (i % 2) * 60; s += `<path d="M${x0} ${y} q 30 -12 60 0 t 60 0 M${x0 + 520} ${y + 40} q 30 -12 60 0 t 60 0" fill="none" stroke="#6fb2c4" stroke-width="3" stroke-linecap="round" opacity=".7"/>`; }
   s += `<path d="${coast}" fill="#e9dcb8" stroke="#2b2420" stroke-width="2.5" filter="url(#lift)"/><g clip-path="url(#isl)">`;
   layers.forEach((l, i) => { s += `<path d="${blob(H[0] + 0.004*i, H[1] + 0.006*i, l[0], l[1], rot, 300 + i, 0.08 + 0.02*i)}" fill="${l[2]}" stroke="#2b2420" stroke-width="1.6" filter="url(#lift)"/>`; });
@@ -825,8 +828,9 @@ function buildMap(){
     s += `<g id="cp${i}" filter="url(#liftS)"><circle cx="${x}" cy="${y}" r="${i === 0 ? 17 : 14}" fill="#fbf8f1" stroke="#2b2420" stroke-width="2.2"/><text x="${x}" y="${y + 5.5}" text-anchor="middle" font-family="Jua, sans-serif" font-size="${i === 0 ? 13 : 15}" fill="#2b2420">${i === 1 ? '1·11' : lab}</text></g>`;
     if (c.crew) s += `<text x="${x}" y="${y + 31}" text-anchor="middle" font-family="Jua, sans-serif" font-size="13" fill="#1f5fae" stroke="#fbf8f1" stroke-width="4" paint-order="stroke">크루</text>`;
   });
-  s += `<rect id="night" width="${MW}" height="${MH}" fill="#1b2650" opacity="0" pointer-events="none"/>`;
-  s += `<g id="rivalDots"></g><g id="meTok"></g>`;
+  s += `</g><rect id="night" width="${MW}" height="${MH}" fill="#0d1630" opacity="0" pointer-events="none"/>`;
+  s += `<g id="stars" opacity="0">${Array.from({length:40}, (_, i) => { const r = mulberry32(500 + i); return `<circle cx="${(r() * MW).toFixed(0)}" cy="${(r() * MH * 0.45).toFixed(0)}" r="${(1 + r() * 1.8).toFixed(1)}" fill="#fff6c8"/>`; }).join('')}</g>`;
+  s += `<g id="rivalDots"></g><circle id="lamp" r="70" fill="url(#lampG)" opacity="0"/><g id="meTok"></g>`;
   s += `<g id="sky" transform="translate(${MW - 70},60)"></g>`;
   // inset island
   { const sc = 0.16, ix = MW - 0.82 * VIEW.kx * VIEW.s * sc - 26, iy = MH - 0.4 * VIEW.ky * VIEW.s * sc - 26, ins = COAST.map(p => [ix + (p[1] - 126.15) * VIEW.kx * VIEW.s * sc, iy + (33.575 - p[0]) * VIEW.ky * VIEW.s * sc]);
@@ -960,6 +964,7 @@ let toastT = 0;
 let sayUntil = 0;
 function say(text, fx){
   const el = document.getElementById('quip'); if (!el) return;
+  el.classList.toggle('float', modalOpen);
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
   el.classList.toggle('event', !!(fx && fx.length) || !!text);
   el.innerHTML = `<span></span>${fx && fx.length ? `<div class="fxs">${fxChips(fx)}</div>` : ''}`;
@@ -982,7 +987,11 @@ function renderRace(full){
   $('#profMe').setAttribute('cx', X(st.km)); $('#profMe').setAttribute('cy', Y(elevAt(st.km)));
   const hc = clockHour(st.t); let n = 0;
   if (hc >= 20.5 || hc < 5.5) n = 1; else if (hc >= 19.5) n = hc - 19.5; else if (hc < 6.5) n = 6.5 - hc;
-  $('#night').setAttribute('opacity', (0.34 * n).toFixed(3));
+  $('#night').setAttribute('opacity', (0.38 * n).toFixed(3));
+  $('#mapBase').style.filter = n > 0.01 ? `brightness(${(1 - 0.42 * n).toFixed(2)}) saturate(${(1 - 0.35 * n).toFixed(2)})` : 'none';
+  $('#stars').setAttribute('opacity', n.toFixed(2));
+  $('#lamp').setAttribute('opacity', n.toFixed(2)); $('#lamp').setAttribute('cx', mypos[0].toFixed(1)); $('#lamp').setAttribute('cy', (mypos[1] - 18).toFixed(1));
+  $('#mapbox').classList.toggle('isNight', n > 0.5);
   $('#clock').textContent = fmtClock(st.t);
   $('#elapsed').textContent = '경과 ' + fmtDur(st.t, true);
   if (!full && performance.now() - lastRender < 160) return;
@@ -1147,7 +1156,7 @@ function quip(force){
 }
 
 // ---------- modals ----------
-function closeModal(){ $('#modalRoot').innerHTML = ''; modalOpen = false; lastT = performance.now(); }
+function closeModal(){ $('#modalRoot').innerHTML = ''; modalOpen = false; lastT = performance.now(); const q = document.getElementById('quip'); if (q) q.classList.remove('float'); }
 function showModal({kick, title, body, choices, gauges}){
   modalOpen = true;
   const html = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">${kick ? `<div class="kick">${kick}</div>` : ''}<h3 id="mTitle">${title}</h3>${body || ''}${gauges ? `<div class="mini">${gaugeHTML()}</div>` : ''}<div class="mbtns">${choices.map((c, i) => `<button type="button" class="btn ${c.primary ? 'primary' : ''}" data-ch="${i}" ${c.disabled ? 'disabled' : ''}>${c.label}</button>`).join('')}</div></div></div>`;
@@ -1164,19 +1173,21 @@ function openSupply(auto){
     const opts = Object.entries(ITEMS).map(([k, it]) => `<button type="button" class="opt ${recommend(st, k) ? 'rec' : ''}" data-it="${k}" ${st.inv[k] <= 0 ? 'disabled' : ''}>${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k)}<span class="ot"><span class="on">${it.name}</span><span class="oh">${it.hint}</span></span><span class="cnt">${st.inv[k]}</span></button>`).join('')
       + (st.B > 45 ? `<button type="button" class="opt ${recommend(st, 'pee') ? 'rec' : ''}" data-it="pee">${recommend(st, 'pee') ? '<span class="recb">추천</span>' : ''}${iconSVG('pee')}<span class="ot"><span class="on">노상 볼일</span><span class="oh">화장실 비우기 · 1.5분</span></span></button>` : '');
     $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">${st.km.toFixed(1)} km · ${fmtClock(st.t)}</div><h3 id="mTitle">${auto ? '보급 타이밍' : '보급 꺼내기'}</h3>
-      ${last ? `<div class="fxline" role="status">${iconSVG(last.k, 28)}<div><b>${last.name}</b> ${last.k === 'pee' ? '해결' : '먹음'}${last.joke ? `<div style="margin-top:2px">${esc(last.joke)}</div>` : ''}<div class="fxs">${fxChips(last.fx) || '<span class="fx">변화 없음</span>'}</div></div></div>` : `<p>${auto ? flavor[Math.floor(st.km) % flavor.length] : '걸으면서 주머니에서 꺼내 먹어요.'}</p>`}
-      ${eatMult(st) > 1 ? `<div class="sumline warn">연속으로 먹는 중 — 다음 보급은 위장 부담 <b class="num">×${eatMult(st).toFixed(1)}</b></div>` : ''}<div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div><div class="mbtns"><button type="button" class="btn primary" id="supDone">${used.length ? '계속 달리기' : '패스하고 달리기'}</button></div></div></div>`;
+      <p>${auto ? flavor[Math.floor(st.km) % flavor.length] : '걸으면서 주머니에서 꺼내 먹어요.'}</p>
+      <div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div><div class="mbtns"><button type="button" class="btn primary" id="supDone">${used.length ? '계속 달리기' : '패스하고 달리기'}</button></div></div></div>`;
     $('#modalRoot').querySelectorAll('[data-it]').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.it, a = snap();
       if (k === 'pee'){ st.B = 0; st.t += 1.5; st.M -= 1; const hc = clockHour(st.t); if ((hc >= 19.5 || hc < 6) && Math.random() < 0.4){ st.M -= 2; joke = '볼일 중 뒤 주자 헤드랜턴 다섯 개가 나를 비췄다. 무대 데뷔.'; } else if (Math.random() < 0.25){ joke = '바람 방향을 잘못 읽었다. 신발이 조금 젖었다.'; st.M -= 2; } }
       else useItem(k);
       clamp(st);
       const name = k === 'pee' ? '노상 볼일' : ITEMS[k].name, fx = diffFx(a, snap());
-      used.push(name); last = {k, name, fx, joke}; if (joke) addLog(joke); joke = '';
+      used.push(name); last = {k, name, fx, joke}; if (joke) addLog(joke);
+      const warn = eatMult(st) > 1 && k !== 'pee' && k !== 'water' ? ` 연속으로 먹는 중 — 다음 보급은 위장 부담 ×${eatMult(st).toFixed(1)}` : '';
+      draw(); say(joke || (name + (k === 'pee' ? ' 해결.' : ' 먹음.') + warn), fx); joke = ''; return;
       addLog(name + (fx.length ? ' — ' + fxText(fx) : ''));
       draw();
     }));
-    $('#supDone').addEventListener('click', () => { closeModal(); if (used.length) say((last && last.joke) || (used.join(', ') + ' 먹고 다시 출발'), diffFx(supStart, snap())); renderRace(true); });
+    $('#supDone').addEventListener('click', () => { closeModal(); if (used.length) say(used.join(', ') + ' 보급 완료. 다시 출발.', diffFx(supStart, snap())); renderRace(true); });
     $('#supDone').focus();
   };
   draw();
@@ -1196,10 +1207,9 @@ function arriveCP(idx){
     const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''} ${recommend(st, k) ? 'rec' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span><span class="oh">${k === 'water' ? `남은 물 ${st.inv.water * 250}ml → 1.5L` : FOOD[k].hint}</span></span><span class="om" ${k === 'water' ? 'style="right:24px"' : ''}>${FOOD[k].min}분</span>${k === 'water' ? `<span class="cnt" style="background:${st.inv.water <= 1 ? '#e8a09a' : '#8ec9d8'}">${st.inv.water}</span>` : ''}</button>`).join('');
     const pv = sel.size ? previewFx([...sel]) : [];
     $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">CP${idx}${cp.crew ? ' · 크루 CP' : ''} · ${cp.km} km · 현재 ${rank}위</div><h3 id="mTitle">${cp.name}</h3><div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div>
-      ${sel.size ? `<div class="fxline"><div><b>먹고 나면</b><div class="fxs">${fxChips(pv) || '<span class="fx">변화 없음</span>'}</div></div></div>` : ''}
       <div class="sumline"><span>정차 <b class="num">${stop}분</b> · 출발 <b class="num">${fmtClock(dep)}</b></span><span class="${margin < 20 ? 'warn' : ''}">컷오프 ${fmtClock(cp.cut)} · 여유 <b class="num">${margin < 0 ? '초과!' : fmtDur(margin)}</b></span></div>
       <div class="mbtns"><button type="button" class="btn" id="cpPass">그냥 통과</button><button type="button" class="btn primary" id="cpGo" ${sel.size ? '' : 'disabled'}>먹고 출발</button></div></div></div>`;
-    $('#modalRoot').querySelectorAll('[data-fd]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.fd; sel.has(k) ? sel.delete(k) : sel.add(k); draw(); }));
+    $('#modalRoot').querySelectorAll('[data-fd]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.fd; sel.has(k) ? sel.delete(k) : sel.add(k); draw(); if (sel.size) say('먹고 나면 이렇게 돼요', previewFx([...sel])); }));
     $('#cpPass').addEventListener('click', () => depart([]));
     $('#cpGo').addEventListener('click', () => depart([...sel]));
   };
