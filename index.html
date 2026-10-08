@@ -200,6 +200,8 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .sumline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;padding:8px 10px;background:var(--card2);border:2px dashed var(--line);border-radius:10px}
 .sumline b{font-family:var(--display);font-weight:400;font-size:17px}
 .warn{color:var(--red)}
+.eff{display:block;font-family:var(--body);font-size:12px;margin-top:2px;color:var(--muted)}
+.btn.primary .eff{color:#fbe9d6}
 .risk{display:block;font-family:var(--body);font-size:12px;margin-top:2px;color:var(--red)}
 .btn.primary .risk{color:#ffe1dc}
 .mbtns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
@@ -522,11 +524,18 @@ function physio(st, dt, dk, up, down){
   if (st.cramp > 0) st.cramp = Math.max(0, st.cramp - dt);
   clamp(st);
 }
+// Smoothed per-hour intake: each item decays with a 45-minute time constant, so the meter
+// glides down between feeds instead of dropping off a 60-minute cliff. Steady eating reads true g/h.
 function hourIntake(st, mins){
-  const w = mins || 60, o = {c:0, w:0, na:0, caf:0};
-  for (const x of st.intake) if (st.t - x.t < w){ o.c += x.c; o.w += x.w; o.na += x.na; o.caf += x.caf; }
-  const k = 60 / Math.min(w, Math.max(st.t, 1)); // per-hour rate (early race uses elapsed time)
-  return {c:o.c*k, w:o.w*k, na:o.na*k, caf:o.caf, raw:o};
+  const tau = mins === 60 || !mins ? 45 : mins * 0.75, o = {c:0, w:0, na:0, caf:0}, raw = {c:0, w:0, na:0, caf:0};
+  for (const x of st.intake){
+    const dt = st.t - x.t; if (dt < 0) continue;
+    const k = Math.exp(-dt / tau) * 60 / tau;
+    o.c += x.c * k; o.w += x.w * k; o.na += x.na * k;
+    if (dt < 60){ raw.c += x.c; raw.w += x.w; raw.na += x.na; raw.caf += x.caf; }
+  }
+  o.caf = raw.caf;
+  return {c:o.c, w:o.w, na:o.na, caf:o.caf, raw};
 }
 function chance(p){ return Math.random() < p; }
 // Casual wildlife & trail moments. modal:true ones ask for a choice.
@@ -568,7 +577,7 @@ const FUN = [
      risk:{p:20, desc:'소 뒷발질', t:2, F:6, M:-6, log:'소가 뒷발로 툭. 허벅지에 소 도장이 찍혔다'}}]},
   {id:'poo',   w:2, modal:true, title:'큰 거 신호', text:'배에서 천둥이 친다. 지금 아니면 늦는다.', choices:[
     {label:'오름 덤불로 (5분)', primary:true, t:5, S:-20, B:-100, M:-2, log:'덤불 속 해결. 휴지는 없었다. 나뭇잎은 많았다'},
-    {label:'CP까지 참는다', hold:true, M:-6, log:'괄약근과 협상 중'}]}
+    {label:'다음 화장실까지 참는다', hold:true, M:-6, note:'속도 −15% · 1km마다 사고 위험 약 6%, 오래 참을수록 커짐', log:'괄약근과 협상 중'}]}
 ];
 function pickFun(st){
   const hc = clockHour(st.t), night = hc >= 19.5 || hc < 6, ele = elevAt(st.km);
@@ -584,6 +593,8 @@ function rollEvents(st, km){
   if (g < -0.07 && ok('fall') && chance(0.004*(1.8 - 0.045*s.agi - 0.02*s.flex)*(1 + st.Z/70)*P.fat*(tech > 1.2 ? 1.5 : 1)*(st.lace ? 2.5 : 1))){ st.cd.fall = km + 2; return {type:'fall'}; }
   if ((st.Na < 25 || st.F > 65) && st.cramp <= 0 && ok('cramp') && chance(0.006*(1.7 - 0.04*s.flex)*(st.Na < 25 ? 1.6 : 0.5))){ st.cd.cramp = km + 4; return {type:'cramp'}; }
   if (st.S > 72 && !st.holding && ok('gi') && chance(0.02*(1.5 - 0.04*s.dig))){ st.cd.gi = km + 3; return {type:'gi'}; }
+  if (st.holding && chance(0.006 * (1 + (st.t - (st.holdT || st.t)) / 30))){ return {type:'accident'}; }
+  if (st.B >= 97 && ok('bladder')){ st.cd.bladder = km + 3; return {type:'bladder'}; }
   if (st.F > 35 && !st.blister && ok('blister') && chance(0.002*(1.6 - 0.05*s.dur))){ st.blister = true; st.cd.blister = km + 10; return {type:'blister'}; }
   if (st.E < 8 && ok('bonk')){ st.cd.bonk = km + 3; return {type:'bonk'}; }
   if (st.M < 4 && ok('quit')){ st.cd.quit = km + 6; return {type:'quit'}; }
@@ -683,7 +694,7 @@ function recommend(st, k){
     case 'riceball': return hi.c < 45 && st.S < 25 && nextKm > 12;
     case 'noodle': return (st.Na < 55 || (night && st.M < 50)) && st.S < 30;
     case 'coffee': return st.Z > 45 && cafRecent < 150;
-    case 'toilet': return st.B > 50 || st.S > 60;
+    case 'toilet': return st.B > 50 || st.S > 60 || st.holding;
     case 'rest': return st.M < 35;
     case 'dropbag': return st.inv.gel < 5 || st.inv.salt < 4 || st.inv.caf < 1;
     case 'socks': return st.blister;
@@ -912,7 +923,9 @@ function autoPlay(st){
     else if (ev.type === 'cp'){ const cp = CPS[ev.idx]; if (st.t > cp.cut) return null; if (ev.idx === CPS.length - 1) return st.t;
       const pick = ['water','cola']; if (st.S < 30) pick.push('banana'); if (st.B > 50 || st.S > 55) pick.push('toilet'); if (cp.menu.includes('riceball') && st.E < 60 && st.S < 30) pick.push('riceball');
       if (cp.crew){ pick.push('dropbag'); if (st.Z > 55) pick.push('nap'); if (st.blister) pick.push('socks'); if (st.Na < 60 && cp.menu.includes('noodle') && st.S < 30) pick.push('noodle'); } if (cp.menu.includes('coffee') && st.Z > 45) pick.push('coffee');
-      for (const p of pick){ consume(st, FOOD[p]); st.t += FOOD[p].min; } st.holding = false; st.seg++; }
+      for (const p of pick){ consume(st, FOOD[p]); st.t += FOOD[p].min; } st.seg++; }
+    else if (ev.type === 'bladder'){ st.B = 0; st.t += 1.5; }
+    else if (ev.type === 'accident'){ st.holding = false; st.t += 8; st.M -= 25; if (Math.random() < 0.2) return null; }
     else if (ev.type === 'fall'){ st.t += 3; st.F += 6; st.M -= 8; } else if (ev.type === 'cramp') st.t += 3; else if (ev.type === 'gi'){ st.t += 5; st.S -= 30; st.B = 0; }
     else if (ev.type === 'bonk'){ if (st.inv.gel > 0){ consume(st, ITEMS.gel); st.inv.gel--; } } else if (ev.type === 'quit') st.M = 25;
     clamp(st);
@@ -967,8 +980,12 @@ function stomachState(){
   if (st.S < 60) return ['소화 중 · 꽉 참', 'low'];
   return ['소화불량 · 그만 먹어!', 'over'];
 }
+let smoothIn = null;
 function intakeHTML(compact){
-  const hi = hourIntake(st, 60), rate = absorbRate(st), ss = stomachState();
+  const tgt = hourIntake(st, 60);
+  if (!smoothIn || smoothIn.run !== st) smoothIn = {run: st, c: tgt.c, w: tgt.w, na: tgt.na};
+  for (const k of ['c','w','na']) smoothIn[k] += (tgt[k] - smoothIn[k]) * (compact ? 0.15 : 1);
+  const hi = {c: smoothIn.c, w: smoothIn.w, na: smoothIn.na}, rate = absorbRate(st), ss = stomachState();
   const recent = st.intake.filter(x => st.t - x.t < 60).length;
   const mins = st.S > 0 ? Math.round(st.S / rate * 60) : 0;
   const flow = [
@@ -977,7 +994,7 @@ function intakeHTML(compact){
     hi.na >= 300 ? `<i class="up">전해질 ▲ 유지</i>` : `<i class="dn">전해질 ▼ 부족</i>`
   ].join('');
   return `<div class="intake ${compact ? 'compact' : ''}">
-    <div class="stom"><div class="gl"><span>내 위 속 <em class="tg ${ss[1]}">${ss[0]}</em></span><span class="num">탄수 ${Math.round(st.S)}g${mins ? ' · 다 소화까지 ' + mins + '분' : ''}</span></div>
+    <div class="stom"><div class="gl"><span>내 위 속 <em class="tg ${ss[1]}">${ss[0]}</em></span><span class="num">더부룩함 ${Math.round(st.S)}${mins ? ' · 다 소화까지 ' + mins + '분' : ''}</span></div>
       <div class="sbar"><i style="width:${Math.min(100, st.S)}%"></i><b style="left:8%;width:22%"></b><span style="left:60%"></span></div>
       <div class="flow"><span class="lbl">위 → 몸으로</span>${flow}</div></div>
     <div class="lbl">시간당 먹는 속도 · 가운데 초록에 맞추기${recent ? '' : ' · 1시간째 아무것도 안 먹음'}</div>${TARGETS.map(([k, n, u, lo, hi2]) => {
@@ -991,14 +1008,14 @@ function intakeHTML(compact){
 }
 // What an item does to the gauges, shown on every supply card. ⏳ = arrives as the gut digests it.
 const EXTRA_FX = {
-  toilet:[['화장실 비움',1],['위 −15g',1]], rest:[['멘탈 +8',1],['근피로 −3',1],['졸음 +3',0]], dropbag:[['보급품 충전',1]],
+  toilet:[['화장실 비움',1],['더부룩함 −15',1]], rest:[['멘탈 +8',1],['근피로 −3',1],['졸음 +3',0]], dropbag:[['보급품 충전',1]],
   socks:[['물집 해결',1],['멘탈 +5',1]], nap:[['졸음 → 5',1],['멘탈 +15',1]], massage:[['근피로 −8',1],['멘탈 +4',1]],
   fruit:[['멘탈 +3',1]], noodle:[['멘탈 +10',1]], banana:[['전해질 +2',1]]
 };
 function effChips(it, k){
   const o = [];
   if (k === 'water' && it === FOOD.water) o.push(['물 1.5L 충전', 1]);
-  if (it.c) o.push([`에너지 +${Math.round(it.c * 0.45)} ⏳`, 1], [`위 +${it.c}g`, 0]);
+  if (it.c) o.push([`에너지 +${Math.round(it.c * 0.45)} ⏳`, 1], [`더부룩함 +${it.c}`, 0]);
   if (it.w) o.push([`수분 +${Math.round(it.w * 0.03)}`, 1], [`화장실 +${Math.round(it.w * 0.02)}`, 0]);
   if (it.na) o.push([`전해질 +${Math.round(it.na * 0.02)}`, 1]);
   if (it.caf) o.push([`졸음 −${Math.round(it.caf * 0.3 / (1 + st.tot.caf / 400))}`, 1]);
@@ -1011,7 +1028,7 @@ function gaugeHTML(keys){
   const one = ([k, n, rev]) => {
     const cap = k === 'E' ? eMax(st) : 100;
     const col = rev ? (st[k] < 40 ? '#b9a6d6' : st[k] < 70 ? '#8b6bb3' : '#5e3f8f') : gColor(k === 'E' ? st[k] / cap * 100 : st[k], 0);
-    return `<div class="g ${rev ? 'neg' : ''}"><div class="gl"><span>${n}</span><span>${k === 'E' && st.S > 0 ? '<b class="absorb" title="위 속 탄수가 흡수되는 중">▲</b> ' : ''}${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${col}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; };
+    return `<div class="g ${rev ? 'neg' : ''}"><div class="gl"><span>${n}</span><span>${k === 'E' && st.S > 0 ? '<b class="absorb" title="위 속 음식이 소화되어 에너지로 들어오는 중">▲</b> ' : ''}${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${col}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; };
   const list = GAUGES.filter(g => !keys || keys.includes(g[0]));
   const good = list.filter(g => !g[2]), bad = list.filter(g => g[2]);
   return good.map(one).join('') + (bad.length ? `<div class="gsep">쌓일수록 나쁨</div>` + bad.map(one).join('') : '');
@@ -1019,7 +1036,7 @@ function gaugeHTML(keys){
 function statusTags(){
   const t = [];
   if (st.E < 25) t.push('에너지 고갈'); if (st.H < 30) t.push('탈수'); if (st.Na < 25) t.push('전해질 부족'); if (st.S > 70) t.push('속이 더부룩');
-  if (st.Z > 70) t.push('꾸벅꾸벅'); if (st.B > 85) t.push('화장실 급함'); if (st.blister) t.push('물집'); if (st.cramp > 0) t.push('쥐'); if (st.holding) t.push('참는 중');
+  if (st.Z > 70) t.push('꾸벅꾸벅'); if (st.B > 85) t.push('화장실 급함'); if (st.blister) t.push('물집'); if (st.cramp > 0) t.push('쥐'); if (st.holding) t.push('참는 중 · 사고 위험');
   const hc = clockHour(st.t); if (hc >= 19.5 || hc < 6) t.push('야간 · 헤드랜턴');
   return t.map(x => `<span class="tag">${x}</span>`).join('');
 }
@@ -1147,7 +1164,7 @@ function snap(){ return {tc:st.tot.c, tw:st.tot.w, tna:st.tot.na, tcaf:st.tot.ca
 function diffFx(a, b){
   const out = [];
   for (const k of Object.keys(FX_LABEL)){ const d = Math.round(b[k] - a[k]); if (Math.abs(d) >= 1){ const [n, rev] = FX_LABEL[k]; out.push({t: n + ' ' + (d > 0 ? '+' : '−') + Math.abs(d), good: rev ? d < 0 : d > 0}); } }
-  if (b.tc > a.tc) out.unshift({t:'위에 탄수 ' + Math.round(b.tc - a.tc) + 'g → 에너지로 소화 중', good:true});
+  if (b.tc > a.tc) out.unshift({t:'더부룩함 +' + Math.round(b.tc - a.tc) + ' (소화되며 에너지로)', good:false});
   if (b.tw > a.tw) out.unshift({t:'물 ' + Math.round(b.tw - a.tw) + 'ml', good:true});
   if (b.tna > a.tna) out.unshift({t:'나트륨 ' + Math.round(b.tna - a.tna) + 'mg', good:true});
   if (b.tcaf > a.tcaf) out.unshift({t:'카페인 ' + Math.round(b.tcaf - a.tcaf) + 'mg', good:true});
@@ -1271,7 +1288,7 @@ function arriveCP(idx){
   st.splits.push({cp: idx, arr, dep: arr, rank});
   if (arr > cp.cut){ st.dnf = {where: cp.name, why: `${cp.name} 컷오프(${fmtClock(cp.cut)})를 넘겨 도착했어요.`}; return endRace(); }
   if (idx === CPS.length - 1){ finished = true; return endRace(); }
-  st.M += cp.crew ? 10 : 5; st.holding = false; clamp(st);
+  st.M += cp.crew ? 10 : 5; clamp(st);
   addLog(`CP${idx} ${cp.name} 도착 (${rank}위)`);
   const keys = [...cp.menu, ...(cp.crew ? ['dropbag','socks','nap','massage'] : [])];
   const sel = new Set();
@@ -1299,48 +1316,77 @@ function arriveCP(idx){
   };
   modalOpen = true; draw(); renderRace(true);
 }
+// Every event choice lists its certain effects and, if any, the chance and content of a bad (or good) outcome.
+const FX_NAMES = [['t',''],['E','에너지'],['H','수분'],['Na','전해질'],['M','멘탈'],['F','근피로'],['Z','졸음'],['B','화장실'],['S','더부룩함']];
+function effText(fx, note){
+  const out = [];
+  for (const [k, n] of FX_NAMES){ const v = fx && fx[k]; if (!v) continue;
+    if (k === 't') out.push(v < 1 ? '30초' : v + '분 지연');
+    else if (k === 'B' && v <= -100) out.push('화장실 비움');
+    else out.push(n + ' ' + (v > 0 ? '+' : '−') + Math.abs(v)); }
+  if (note) out.push(note);
+  return out.join(' · ');
+}
+function pickFx(c){ if (c.fx) return c.fx; const o = {}; for (const k of ['t','E','H','Na','M','F','Z','B','S']) if (c[k]) o[k] = c[k]; return o; }
+function applyFxObj(fx){ if (!fx) return; if (fx.t) st.t += fx.t; for (const k of ['E','H','Na','M','F','Z']) if (fx[k]) st[k] += fx[k]; if (fx.S) st.S = Math.max(0, st.S + fx.S); if (fx.B) st.B = fx.B <= -100 ? 0 : Math.max(0, st.B + fx.B); }
+function choiceEvent(kick, title, text, list){
+  showModal({kick, title, body:`<p>${text}</p>`, gauges:true, choices:list.map(c => {
+    const fx = pickFx(c), sure = effText(fx, c.note), r = c.risk, rfx = r ? pickFx(r) : null;
+    return {primary:c.primary,
+      label: c.label + (sure ? `<span class="eff">${sure}</span>` : '') + (r ? `<span class="risk">${r.p}% 확률로 ${r.desc}${effText(rfx, r.note) ? ' · ' + effText(rfx, r.note) : ''}</span>` : ''),
+      act(){
+        applyFxObj(fx); if (c.do) c.do(); if (c.hold){ st.holding = true; st.holdT = st.t; } if (c.lace) st.lace = true;
+        if (r && Math.random() * 100 < r.p){ applyFxObj(rfx); if (r.do) r.do(); addLog(r.log); }
+        else if (c.log) addLog(c.log);
+      }};
+  })});
+}
 function handleEvent(ev){
   if (ev.type === 'scenic'){ toast(ev.text); addLog(ev.text); return; }
   if (ev.type === 'fun'){
     const f = ev.f;
     if (!f.modal){ const a = snap(); st.M += f.M; if (f.F) st.F += f.F; if (f.carbs) ingest(st, {c:f.carbs, w:0, na:0, caf:0}); clamp(st); const fx = diffFx(a, snap()); say(f.text, fx); addLog(f.text); return; }
-    if (f.choices) return showModal({kick:'레이스 중 사건', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:f.choices.map(c => ({
-      label: c.label + (c.risk ? `<span class="risk">${c.risk.p}% 확률로 ${c.risk.desc} · ${riskText(c.risk)}</span>` : ''), primary:c.primary, act(){
-      applyFx(c); if (c.hold) st.holding = true; if (c.lace) st.lace = true;
-      if (c.risk && Math.random() * 100 < c.risk.p){ applyFx(c.risk); lastLogText = ''; addLog(c.risk.log); }
-      else addLog(c.log); }}))});
-    if (f.id === 'boar') return showModal({kick:'야생동물', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:[
-      {label:'조용히 뒷걸음질 (2분)', act(){ st.t += 2; st.M -= 4; addLog('멧돼지를 피해 조용히 우회'); }},
-      {label:'소리 지르며 지나간다', primary:true, act(){ st.M -= 8; st.F += 3; st.Z -= 15; addLog('멧돼지에게 고함치며 통과. 잠은 확 깼다'); }}]});
-    if (f.id === 'lost') return showModal({kick:'길 찾기', title:f.title, body:`<p>${f.text}</p>`, gauges:true, choices:[
-      {label:'마지막 리본까지 되돌아간다 (6분)', act(){ st.t += 6; st.M -= 5; addLog('리본까지 되돌아감'); }},
-      {label:'GPS 확인 (2분)<span class="risk">50% 확률로 더 헤맴 · 7분 지연 · 멘탈 -8</span>', primary:true, act(){ st.t += 2; if (Math.random() < 0.5){ st.t += 7; st.M -= 8; addLog('GPS를 믿었는데… 더 헤맸다. 7분 손해'); } else addLog('GPS 확인, 제 길이었다'); }}]});
+    if (f.choices) return choiceEvent('레이스 중 사건', f.title, f.text, f.choices);
+    if (f.id === 'lost') return choiceEvent('길 찾기', f.title, f.text, [
+      {label:'마지막 리본까지 되돌아간다', fx:{t:6, M:-5}, log:'리본까지 되돌아감'},
+      {label:'GPS 확인', primary:true, fx:{t:2}, log:'GPS 확인, 제 길이었다', risk:{p:50, desc:'더 헤맴', fx:{t:7, M:-8}, log:'GPS를 믿었는데… 더 헤맸다'}}]);
     return;
   }
   if (ev.type === 'supply') return openSupply(true);
   if (ev.type === 'cp') return arriveCP(ev.idx);
-  const E = {
-    fall: {kick:'다운힐', title:'꽈당! 넘어졌다', body:'<p>젖은 현무암에 발이 미끄러졌다. 무릎이 쓰라리다.</p>', choices:[
-      {label:'앉아서 상태 확인 (3분)', act(){ st.t += 3; st.F += 3; st.M -= 4; addLog('넘어짐 — 상태 확인 후 출발'); }},
-      {label:'바로 일어나 달린다', primary:true, act(){ st.t += 0.5; st.F += 8; st.M -= 8; addLog('넘어짐 — 털고 바로 출발'); }}]},
-    cramp: {kick:'경련', title:'종아리에 쥐가 났다', body:'<p>근육이 돌처럼 굳는다.</p>', choices:[
-      ...(st.inv.salt > 0 ? [{label:'소금캡슐 + 스트레칭 (3분)', primary:true, act(){ st.inv.salt--; st.Na += 25; st.t += 3; st.cramp = 0; addLog('쥐 — 소금 먹고 스트레칭'); }}] : []),
-      {label:'스트레칭 (3분)', act(){ st.t += 3; st.cramp = 0; st.Na += 0; addLog('쥐 — 스트레칭'); }},
-      {label:'참고 절뚝이며 간다', act(){ st.cramp = 15; st.M -= 5; addLog('쥐 — 참고 진행'); }}]},
-    gi: {kick:'위장 트러블', title:'배가 신호를 보낸다…', body:'<p>너무 많이 먹었나. 지금 당장 해결하지 않으면 곤란하다.</p>', choices:[
-      {label:'숲으로 (5분)', primary:true, act(){ st.t += 5; st.S -= 30; st.B = 0; st.M -= 3; addLog('숲에서 급한 일 해결. 제주 나뭇잎의 품질에 감사'); }},
-      {label:'다음 CP까지 참는다', act(){ st.holding = true; st.M -= 8; addLog('배를 움켜쥐고 참는 중'); }}]},
-    blister: {kick:'발', title:'발바닥에 물집이 잡혔다', body:'<p>한 걸음마다 따끔하다. 크루 CP에서 양말·신발을 갈아 신으면 나아진다.</p>', choices:[{label:'확인', primary:true, act(){ addLog('물집 발생'); }}]},
-    bonk: {kick:'봉크', title:'다리에 힘이 안 들어간다', body:'<p>에너지가 바닥났다. 손이 떨린다.</p>', choices:[
-      ...(st.inv.gel >= 2 ? [{label:'젤 두 개 연속', primary:true, act(){ useItem('gel'); useItem('gel'); addLog('봉크 — 젤 두 개 투입'); }}] : []),
-      ...(st.inv.gel >= 1 ? [{label:'젤 하나', act(){ useItem('gel'); addLog('봉크 — 젤 하나'); }}] : []),
-      ...(st.inv.bar >= 1 ? [{label:'에너지바', act(){ useItem('bar'); addLog('봉크 — 에너지바'); }}] : []),
-      {label:'걸으면서 버틴다', act(){ st.pace = 'easy'; addLog('봉크 — 걸으며 버팀'); }}]},
-    quit: {kick:'멘탈', title:'그만두고 싶다…', body:'<p>왜 이걸 시작했을까. 다리도, 마음도 무겁다.</p>', choices:[
-      {label:'한 걸음만 더', primary:true, act(){ st.M = 30; addLog('멘탈 붕괴 직전 — 다시 일어섬'); }},
-      {label:'기권한다', act(){ st.dnf = {where: st.km.toFixed(1) + ' km 지점', why:'스스로 레이스를 멈췄어요.'}; endRace(); }}]}
+  const gelNote = n => `에너지 +${Math.round(25 * 0.45 * n)} ⏳ · 더부룩함 +${25 * n}`;
+  const D = {
+    fall: ['다운힐', '꽈당! 넘어졌다', '젖은 현무암에 발이 미끄러졌다. 무릎이 쓰라리다.', [
+      {label:'앉아서 상태 확인', fx:{t:3, F:3, M:-4}, log:'넘어짐 — 상태 확인 후 출발'},
+      {label:'바로 일어나 달린다', primary:true, fx:{t:0.5, F:6, M:-6}, log:'넘어짐 — 털고 바로 출발', risk:{p:30, desc:'발목 삐끗', fx:{t:2, F:6, M:-4}, log:'일어나다 발목을 삐끗했다'}}]],
+    cramp: ['경련', '종아리에 쥐가 났다', '근육이 돌처럼 굳는다.', [
+      ...(st.inv.salt > 0 ? [{label:'소금캡슐 + 스트레칭', primary:true, fx:{t:3, Na:6}, note:'쥐 바로 풀림 · 소금 1개 사용', do(){ st.inv.salt--; st.cramp = 0; }, log:'쥐 — 소금 먹고 스트레칭'}] : []),
+      {label:'스트레칭만', fx:{t:3}, note:'쥐 풀림', do(){ st.cramp = 0; }, log:'쥐 — 스트레칭', risk:{p:40, desc:'쥐 재발', note:'10분간 속도 −25%', do(){ st.cramp = 10; }, log:'스트레칭했는데 또 쥐가 났다'}},
+      {label:'참고 절뚝이며 간다', fx:{M:-5}, note:'15분간 속도 −25%', do(){ st.cramp = 15; }, log:'쥐 — 참고 진행', risk:{p:25, desc:'쥐 악화', fx:{F:6, M:-4}, log:'참다가 쥐가 더 심해졌다'}}]],
+    gi: ['위장 트러블', '배가 신호를 보낸다…', '너무 많이 먹었나. 지금 당장 해결하지 않으면 곤란하다.', [
+      {label:'숲으로', primary:true, fx:{t:5, S:-30, B:-100, M:-3}, log:'숲에서 급한 일 해결. 제주 나뭇잎의 품질에 감사'},
+      {label:'다음 화장실까지 참는다', fx:{M:-8}, note:'속도 −15% · 1km마다 사고 위험 약 6%, 오래 참을수록 커짐', do(){ st.holding = true; st.holdT = st.t; }, log:'배를 움켜쥐고 참는 중'}]],
+    accident: ['참사', '…늦었다', '참고 또 참았지만, 몸이 먼저 결정을 내렸다. 자세한 묘사는 생략한다.', [
+      {label:'덤불에서 조용히 수습', primary:true, fx:{t:8, M:-25, S:-30}, note:'참기 끝', do(){ st.holding = false; }, log:'덤불에서 수습. 양말 한 짝과 작별했다',
+       risk:{p:20, desc:'수치심에 기권', note:'레이스 종료 · DNF', do(){ st.dnf = {where: st.km.toFixed(1) + ' km 지점', why:'화장실을 너무 오래 참다가 큰일을 치르고 레이스를 접었어요.'}; endRace(); }, log:'수치심에 기권'}},
+      {label:'모른 척 다음 CP까지 달린다', fx:{M:-35}, note:'참기 끝 · 주변 주자들이 거리를 둠', do(){ st.holding = false; }, log:'아무 일 없었던 척 달리는 중. 주변이 넓어졌다',
+       risk:{p:35, desc:'의료진이 레이스 중단', note:'DNF', do(){ st.dnf = {where: st.km.toFixed(1) + ' km 지점', why:'큰일을 치른 채 달리다 의료진에게 레이스를 멈춰야 했어요.'}; endRace(); }, log:'의료진에게 붙잡혔다'}}]],
+    bladder: ['방광', '방광이 한계에 도달했다', '더는 미룰 수 없다. 지금 이 순간 세상에서 제일 중요한 문제다.', [
+      {label:'노상 볼일', primary:true, fx:{t:1.5, B:-100, M:-1}, log:'길옆 수풀에서 급한 볼일'},
+      {label:'참는다', fx:{M:-5}, note:'화장실 계속 가득 · 속도 −7%', log:'방광과 함께 달리는 중',
+       risk:{p:30, desc:'바지에 실수', fx:{t:2, B:-100, M:-15}, log:'…조금 늦었다. 다행히 비가 오는 척할 수 있다'}}]],
+    blister: ['발', '발바닥에 물집이 잡혔다', '한 걸음마다 따끔하다.', [
+      {label:'알겠다', primary:true, note:'크루 CP에서 양말·신발 교체 전까지 속도 −5%', log:'물집 발생'}]],
+    bonk: ['봉크', '다리에 힘이 안 들어간다', '에너지가 바닥났다. 손이 떨린다.', [
+      ...(st.inv.gel >= 2 ? [{label:'젤 두 개 연속', primary:true, note:gelNote(2), do(){ useItem('gel'); useItem('gel'); }, log:'봉크 — 젤 두 개 투입', risk:{p:30, desc:'위가 거부', fx:{S:15, M:-4}, log:'젤 두 개에 위가 반항했다'}}] : []),
+      ...(st.inv.gel >= 1 ? [{label:'젤 하나', note:gelNote(1), do(){ useItem('gel'); }, log:'봉크 — 젤 하나'}] : []),
+      ...(st.inv.bar >= 1 ? [{label:'에너지바', note:'에너지 +18 ⏳ · 더부룩함 +40', do(){ useItem('bar'); }, log:'봉크 — 에너지바'}] : []),
+      {label:'걸으면서 버틴다', note:'페이스 아끼기로 전환 · 에너지 소모 −20%', do(){ st.pace = 'easy'; }, log:'봉크 — 걸으며 버팀'}]],
+    quit: ['멘탈', '그만두고 싶다…', '왜 이걸 시작했을까. 다리도, 마음도 무겁다.', [
+      {label:'한 걸음만 더', primary:true, note:'멘탈 30으로 회복', do(){ st.M = 30; }, log:'멘탈 붕괴 직전 — 다시 일어섬'},
+      {label:'기권한다', note:'레이스 종료 · DNF', do(){ st.dnf = {where: st.km.toFixed(1) + ' km 지점', why:'스스로 레이스를 멈췄어요.'}; endRace(); }}]]
   }[ev.type];
-  if (E) showModal({...E, gauges:true});
+  if (D) choiceEvent(...D);
 }
 // ---------- end ----------
 let submitted = null;
