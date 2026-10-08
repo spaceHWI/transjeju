@@ -596,7 +596,7 @@ function rollEvents(st, km){
   if (st.holding && chance(0.006 * (1 + (st.t - (st.holdT || st.t)) / 30))){ return {type:'accident'}; }
   if (st.B >= 97 && ok('bladder')){ st.cd.bladder = km + 3; return {type:'bladder'}; }
   if (st.F > 35 && !st.blister && ok('blister') && chance(0.002*(1.6 - 0.05*s.dur))){ st.blister = true; st.cd.blister = km + 10; return {type:'blister'}; }
-  if (st.E < 8 && ok('bonk')){ st.cd.bonk = km + 3; return {type:'bonk'}; }
+  if (st.E < 8 && ok('bonk')){ st.cd.bonk = km + 6; return {type:'bonk'}; }
   if (st.M < 4 && ok('quit')){ st.cd.quit = km + 6; return {type:'quit'}; }
   if (ok('fun') && chance(0.02)){ st.cd.fun = km + 2; const f = pickFun(st); if (f) return {type:'fun', f}; }
   return null;
@@ -625,7 +625,7 @@ function advance(st, dtMin){
     for (const sc of SCENIC) if (st.km >= sc.km && !st.flags[sc.id]){ st.flags[sc.id] = true; st.M += sc.M; clamp(st); return {type:'scenic', text:sc.text}; }
     if (hitCP) return {type:'cp', idx: st.seg + 1};
     for (let m = Math.floor(k0*10) + 1; m <= Math.floor(st.km*10); m++){ const ev = rollEvents(st, m/10); if (ev) return ev; }
-    if (st.t >= st.nextSupply){ st.nextSupply = st.t + 38 + Math.random()*12; if (st.km < TOTAL_KM - 2) return {type:'supply'}; }
+    if (st.t >= st.nextSupply){ st.nextSupply = st.t + 28 + Math.random()*8; if (st.km < TOTAL_KM - 2) return {type:'supply'}; }
   }
   return null;
 }
@@ -682,11 +682,12 @@ function recommend(st, k){
   const cafRecent = st.intake.filter(x => st.t - x.t < 180).reduce((a, x) => a + x.caf, 0);
   const nextKm = CPS[Math.min(st.seg + 1, CPS.length - 1)].km - st.km;
   switch (k){
-    case 'gel': return hi.c < 50 && st.S < 40 && st.inv.gel > 0;
+    case 'gel': return hi.c < 55 && st.S < 45 && st.inv.gel > 0;
     case 'bar': return hi.c < 40 && st.S < 25 && nextKm > 8 && st.inv.bar > 0;
     case 'caf': return st.Z > 45 && night && cafRecent < 150 && st.inv.caf > 0;
     case 'salt': return (st.Na < 55 || hi.na < 250) && st.inv.salt > 0;
     case 'water': return (st.H < 80 || hi.w < 450) && st.inv.water > 0;
+    case 'refill': return st.inv.water < WATER_MAX - 1;
     case 'pee': return st.B > 70;
     case 'cola': return (st.E < 60 || st.Z > 40) && st.S < 50;
     case 'banana': return hi.c < 50 && st.S < 35;
@@ -1294,7 +1295,7 @@ function arriveCP(idx){
   const sel = new Set();
   const draw = () => {
     const stop = [...sel].reduce((a, k) => a + FOOD[k].min, 0), dep = st.t + stop, margin = cp.cut - dep;
-    const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''} ${recommend(st, k) ? 'rec' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${recommend(st, k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span>${k === 'water' ? `<span class="oh">남은 물 ${st.inv.water * 250}ml</span>` : ''}${effChips(FOOD[k], k)}</span><span class="om" ${k === 'water' ? 'style="right:24px"' : ''}>${FOOD[k].min}분</span>${k === 'water' ? `<span class="cnt" style="background:${st.inv.water <= 1 ? '#e8a09a' : '#8ec9d8'}">${st.inv.water}</span>` : ''}</button>`).join('');
+    const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''} ${recommend(st, k === 'water' ? 'refill' : k) ? 'rec' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${recommend(st, k === 'water' ? 'refill' : k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span>${k === 'water' ? `<span class="oh">남은 물 ${st.inv.water * 250}ml</span>` : ''}${effChips(FOOD[k], k)}</span><span class="om" ${k === 'water' ? 'style="right:24px"' : ''}>${FOOD[k].min}분</span>${k === 'water' ? `<span class="cnt" style="background:${st.inv.water <= 1 ? '#e8a09a' : '#8ec9d8'}">${st.inv.water}</span>` : ''}</button>`).join('');
     const pv = sel.size ? previewFx([...sel]) : [];
     $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">CP${idx}${cp.crew ? ' · 크루 CP' : ''} · ${cp.km} km · 현재 ${rank}위</div><h3 id="mTitle">${cp.name}</h3><div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div>
       <div class="sumline"><span>정차 <b class="num">${stop}분</b> · 출발 <b class="num">${fmtClock(dep)}</b></span><span class="${margin < 20 ? 'warn' : ''}">컷오프 ${fmtClock(cp.cut)} · 여유 <b class="num">${margin < 0 ? '초과!' : fmtDur(margin)}</b></span></div>
