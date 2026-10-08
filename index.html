@@ -118,6 +118,9 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .gb{height:12px;border:2px solid var(--ink);border-radius:7px;background:var(--card);overflow:hidden;margin-top:2px}
 .gb{position:relative}
 .gb i{display:block;height:100%;transition:width .2s}
+.g.neg .gl span:first-child{color:#5e3f8f}
+.g.neg .gb{background:repeating-linear-gradient(135deg,#fbf8f1 0 4px,#f1ecf7 4px 8px)}
+.gsep{grid-column:1/-1;font-family:var(--display);font-size:11px;color:#5e3f8f;border-top:2px dashed #cbbfe0;padding-top:3px;margin-top:2px}
 .gb s{position:absolute;right:0;top:0;bottom:0;background:repeating-linear-gradient(135deg,#c9bda6 0 3px,#efe7d4 3px 6px);border-left:2px solid var(--ink)}
 .intake{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;padding:9px 11px 6px;border:2px dashed var(--line);border-radius:10px;background:var(--card2)}
 .intake .im .gl{display:flex;justify-content:space-between;gap:6px;font-family:var(--display);font-size:13px}
@@ -130,9 +133,10 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .opt .on small{font-family:var(--body);font-size:11px;color:var(--muted)}
 .stom{display:flex;flex-direction:column;gap:4px;padding-bottom:6px;border-bottom:2px dashed var(--line)}
 .stom .gl{display:flex;justify-content:space-between;gap:6px;font-family:var(--display);font-size:14px}
+.stom .gl span:first-child{color:#5e3f8f}
 .stom .gl span:last-child{color:var(--muted);font-size:12px}
 .sbar{position:relative;height:16px;border:2px solid var(--ink);border-radius:9px;background:var(--card);overflow:hidden}
-.sbar i{position:absolute;left:0;top:0;bottom:0;background:repeating-linear-gradient(135deg,#f2c230 0 6px,#f6d25c 6px 12px);transition:width .3s}
+.sbar i{position:absolute;left:0;top:0;bottom:0;background:repeating-linear-gradient(135deg,#8b6bb3 0 6px,#a48bc6 6px 12px);transition:width .3s}
 .sbar b{position:absolute;top:0;bottom:0;background:rgba(127,174,78,.25);border-left:2px dashed var(--ink);border-right:2px dashed var(--ink)}
 .sbar span{position:absolute;top:0;bottom:0;right:0;background:rgba(185,50,42,.18)}
 .flow{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
@@ -1003,9 +1007,15 @@ function effChips(it, k){
 }
 function slopeNow(){ const g = (elevAt(st.km + 0.3) - elevAt(st.km)) / 300 * 100; return g; }
 function gColor(v, rev){ const x = rev ? 100 - v : v; return x > 50 ? '#7fae4e' : x > 25 ? '#f2c230' : '#b9322a'; }
-function gaugeHTML(keys){ return GAUGES.filter(g => !keys || keys.includes(g[0])).map(([k, n, rev]) => {
-  const cap = k === 'E' ? eMax(st) : 100;
-  return `<div class="g"><div class="gl"><span>${n}</span><span>${k === 'E' && st.S > 0 ? '<b class="absorb" title="위 속 탄수가 흡수되는 중">▲</b> ' : ''}${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${gColor(k === 'E' ? st[k] / cap * 100 : st[k], rev)}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; }).join(''); }
+function gaugeHTML(keys){
+  const one = ([k, n, rev]) => {
+    const cap = k === 'E' ? eMax(st) : 100;
+    const col = rev ? (st[k] < 40 ? '#b9a6d6' : st[k] < 70 ? '#8b6bb3' : '#5e3f8f') : gColor(k === 'E' ? st[k] / cap * 100 : st[k], 0);
+    return `<div class="g ${rev ? 'neg' : ''}"><div class="gl"><span>${n}</span><span>${k === 'E' && st.S > 0 ? '<b class="absorb" title="위 속 탄수가 흡수되는 중">▲</b> ' : ''}${Math.round(st[k])}${k === 'E' ? ' / ' + Math.round(cap) : ''}</span></div><div class="gb"><i style="width:${st[k]}%;background:${col}"></i>${cap < 100 ? `<s style="width:${100 - cap}%"></s>` : ''}</div></div>`; };
+  const list = GAUGES.filter(g => !keys || keys.includes(g[0]));
+  const good = list.filter(g => !g[2]), bad = list.filter(g => g[2]);
+  return good.map(one).join('') + (bad.length ? `<div class="gsep">쌓일수록 나쁨</div>` + bad.map(one).join('') : '');
+}
 function statusTags(){
   const t = [];
   if (st.E < 25) t.push('에너지 고갈'); if (st.H < 30) t.push('탈수'); if (st.Na < 25) t.push('전해질 부족'); if (st.S > 70) t.push('속이 더부룩');
