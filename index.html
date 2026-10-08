@@ -117,11 +117,19 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .gb{position:relative}
 .gb i{display:block;height:100%;transition:width .2s}
 .gb s{position:absolute;right:0;top:0;bottom:0;background:repeating-linear-gradient(135deg,#c9bda6 0 3px,#efe7d4 3px 6px);border-left:2px solid var(--ink)}
-.intake{grid-column:1/-1;display:flex;flex-direction:column;gap:5px;padding:8px 10px;border:2px dashed var(--line);border-radius:10px;background:var(--card2)}
-.intake .im .gl{display:flex;justify-content:space-between;font-family:var(--display);font-size:13px}
-.intake .im .gl span:last-child{color:var(--muted)}
-.ib{position:relative;height:11px}
-.ib b{position:absolute;top:-2px;bottom:-2px;border-left:2px dashed var(--ink);border-right:2px dashed var(--ink);background:rgba(127,174,78,.18)}
+.intake{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;padding:9px 11px 6px;border:2px dashed var(--line);border-radius:10px;background:var(--card2)}
+.intake .im .gl{display:flex;justify-content:space-between;gap:6px;font-family:var(--display);font-size:13px}
+.intake .im .gl span:last-child{color:var(--muted);font-size:12px}
+.tg{font-style:normal;font-size:11px;border:1.5px solid var(--ink);border-radius:6px;padding:0 5px;margin-left:3px}
+.tg.ok{background:#cfe6a8}.tg.low{background:#fbe39a}.tg.bad{background:#f3c1bb}.tg.over{background:#f6c99a}
+.tbar{position:relative;height:14px;margin-top:3px;border:2px solid var(--ink);border-radius:8px;background:linear-gradient(90deg,#f3c1bb 0,#fbe39a 30%,#fbf8f1 50%,#fbe39a 70%,#f6c99a 100%)}
+.tbar b{position:absolute;top:0;bottom:0;background:#9cc65e;border-left:2px solid var(--ink);border-right:2px solid var(--ink)}
+.tbar i{position:absolute;top:-6px;width:0;height:0;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--ink);transition:left .3s}
+.tbar i::after{content:'';position:absolute;left:-1.5px;top:-1px;width:3px;height:18px;background:var(--ink)}
+.tticks{position:relative;height:13px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tticks span{position:absolute;top:1px;transform:translateX(-50%);white-space:nowrap}
+.tticks span:first-child{transform:none;left:0}
+.tticks span:last-child{transform:translateX(-100%)}
 .status{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;min-height:0}
 .tag{font-size:12px;font-family:var(--display);border:1.5px solid var(--ink);border-radius:8px;padding:1px 7px;background:#f6d2b5}
 .paceset{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
@@ -920,12 +928,17 @@ $('#cplist').innerHTML = CPS.slice(1).map((c, i) => `<span>${i + 1 === 12 ? 'F' 
 let running = false, lastPace = '', st = null, rivals = [], speed = 1, modalOpen = false, lastT = 0, raf = 0, lastRender = 0, finished = false;
 const GAME_MIN_PER_SEC = 6;
 const GAUGES = [['E','에너지',0],['H','수분',0],['Na','전해질',0],['M','멘탈',0],['S','위 속 탄수',1],['F','근피로',1],['Z','졸음',1],['B','화장실',1]];
-const TARGETS = [['c','탄수화물','g/h',50,70,100],['w','수분','ml/h',450,750,1000],['na','나트륨','mg/h',300,600,1000]];
+const TARGETS = [['c','탄수화물','g',50,70],['w','수분','ml',450,750],['na','나트륨','mg',300,600]];
+// Target band sits in the middle of each bar (scale 0 .. lo+hi), with a pin for the last-60-minute rate.
 function intakeHTML(compact){
   const hi = hourIntake(st, 60);
-  return `<div class="intake ${compact ? 'compact' : ''}"><div class="lbl">최근 60분 섭취 · 목표 구간</div>${TARGETS.map(([k, n, u, lo, hi2, max]) => {
-    const v = hi[k], pct = Math.min(100, v / max * 100), ok = v >= lo && v <= hi2, col = ok ? '#7fae4e' : v < lo ? (v < lo * 0.6 ? '#b9322a' : '#f2c230') : '#f29a2e';
-    return `<div class="im"><div class="gl"><span>${n}</span><span class="num">${Math.round(v)} ${u}</span></div><div class="gb ib"><i style="width:${pct}%;background:${col}"></i><b style="left:${lo / max * 100}%;width:${(hi2 - lo) / max * 100}%"></b></div></div>`;
+  return `<div class="intake ${compact ? 'compact' : ''}"><div class="lbl">최근 60분 섭취 · 가운데 초록 구간에 맞추세요</div>${TARGETS.map(([k, n, u, lo, hi2]) => {
+    const v = hi[k], max = lo + hi2, pos = Math.min(100, v / max * 100);
+    const st2 = v < lo ? (v < lo * 0.6 ? ['많이 부족', 'bad'] : ['부족', 'low']) : v > hi2 ? ['과다', 'over'] : ['적정', 'ok'];
+    const gap = v < lo ? `+${Math.round(lo - v)}${u} 필요` : v > hi2 ? `${Math.round(v - hi2)}${u} 초과` : '유지';
+    return `<div class="im"><div class="gl"><span>${n} <em class="tg ${st2[1]}">${st2[0]}</em></span><span class="num">${Math.round(v)}${u}/h · ${gap}</span></div>
+      <div class="tbar"><b style="left:${lo / max * 100}%;width:${(hi2 - lo) / max * 100}%"></b><i style="left:${pos}%"></i></div>
+      <div class="tticks"><span>0</span><span style="left:${lo / max * 100}%">${lo}</span><span style="left:${hi2 / max * 100}%">${hi2}</span><span style="left:100%">${max}${u}/h</span></div></div>`;
   }).join('')}</div>`;
 }
 function slopeNow(){ const g = (elevAt(st.km + 0.3) - elevAt(st.km)) / 300 * 100; return g; }
