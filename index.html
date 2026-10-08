@@ -1,7 +1,7 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="코믹 트랜스제주 시뮬레이터. 한라산을 넘는 148.8km, 젤·노상 볼일·멧돼지와 함께 가상 1위를 노리는 트레일러닝 게임.">
+<meta name="description" content="한라산을 넘는 148.8km, 젤·노상 볼일·멧돼지와 함께 가상 1위를 노리는 트레일러닝 게임.">
 <meta property="og:type" content="website"><meta property="og:site_name" content="트랜스제주 100마일 시뮬레이터">
-<meta property="og:title" content="트랜스제주 100마일 시뮬레이터"><meta property="og:description" content="코믹 트랜스제주 시뮬레이터. 젤·노상 볼일·멧돼지와 함께 한라산 148.8km를 달려 가상 1위를 노려 보세요.">
+<meta property="og:title" content="트랜스제주 100마일 시뮬레이터"><meta property="og:description" content="젤·노상 볼일·멧돼지와 함께 한라산 148.8km를 달려 가상 1위를 노려 보세요.">
 <meta property="og:url" content="https://spacehwi.github.io/transjeju/"><meta property="og:image" content="https://spacehwi.github.io/transjeju/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="트랜스제주 100마일 시뮬레이터"><meta name="twitter:image" content="https://spacehwi.github.io/transjeju/og.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="theme-color" content="#f2c230">
@@ -145,9 +145,11 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 .absorb{font-weight:400;font-size:11px;color:#4f8f3a;animation:blink 1.2s ease-in-out infinite}
 @keyframes blink{50%{opacity:.35}}
 .nflow{display:flex;flex-direction:column;gap:4px;padding-bottom:7px;border-bottom:2px dashed var(--line)}
-.nf{display:grid;grid-template-columns:86px minmax(0,1fr) 30px 98px;gap:6px;align-items:center;font-family:var(--display);font-size:12px}
+.nf{display:grid;grid-template-columns:110px minmax(0,1fr) 30px 92px;gap:6px;align-items:center;font-family:var(--display);font-size:12px}
 .nf .nt b,.nf .nt2 b{font-weight:400}
 .nf .nt2 b.off{color:var(--muted)}
+.intake.compact .nf{grid-template-columns:100px minmax(36px,1fr) 18px 78px;gap:4px}
+.intake.compact .arrow em{display:none}
 .nbar{height:10px;border:1.5px solid var(--ink);border-radius:6px;background:var(--card);overflow:hidden}
 .nbar i{display:block;height:100%;background:#f2c230;transition:width .4s}
 .arrow{position:relative;height:10px;display:flex;justify-content:space-between;align-items:center}
@@ -269,7 +271,7 @@ input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(
 <section id="scrSetup" style="display:flex;flex-direction:column;gap:16px">
   <header class="hero">
     <div>
-      <div class="lbl">코믹 트랜스제주 시뮬레이터 · 가상 레이스</div>
+      <div class="lbl">TRANSJEJU 100M · 가상 레이스</div>
       <h1>트랜스제주 <b>100마일</b> 시뮬레이터</h1>
       <p>금요일 밤 9시 제주월드컵경기장 출발. 한라산 정상을 넘어 동쪽 들판과 숲을 돌아 다시 경기장으로. 보급과 CP 선택으로 가상 1위를 노리세요.</p>
     </div>
@@ -1011,31 +1013,21 @@ function stomachState(){
   return ['소화불량 · 그만 먹어!', 'over'];
 }
 let smoothIn = null;
+// One compact box: per nutrient, how fast you're eating it (tag), what is still digesting (bar), and what it is feeding (arrow).
 function intakeHTML(compact){
   const tgt = hourIntake(st, 60);
   if (!smoothIn || smoothIn.run !== st) smoothIn = {run: st, c: tgt.c, w: tgt.w, na: tgt.na};
   for (const k of ['c','w','na']) smoothIn[k] += (tgt[k] - smoothIn[k]) * (compact ? 0.15 : 1);
-  const hi = {c: smoothIn.c, w: smoothIn.w, na: smoothIn.na}, rate = absorbRate(st), ss = stomachState();
-  const recent = st.intake.filter(x => st.t - x.t < 60).length;
-  const mins = st.S > 0 ? Math.round(st.S / rate * 60) : 0;
-  const flow = [
-    st.S > 0 ? `<i class="up">에너지 ▲ +${Math.round(rate * 0.45)}/시간</i>` : `<i class="dn">에너지 공급 끊김</i>`,
-    hi.w >= 450 ? `<i class="up">수분 ▲ 유지</i>` : `<i class="dn">수분 ▼ 부족</i>`,
-    hi.na >= 300 ? `<i class="up">전해질 ▲ 유지</i>` : `<i class="dn">전해질 ▼ 부족</i>`
-  ].join('');
-  const flowRow = (label, amt, unit, max, target, perH) => `<div class="nf ${amt > 0.5 ? 'on' : ''}"><span class="nt">${label} <b class="num">${Math.round(amt)}${unit}</b></span><span class="nbar"><i style="width:${Math.min(100, amt / max * 100)}%"></i></span><span class="arrow"><em></em><em></em><em></em></span><span class="nt2">${target} ${amt > 0.5 ? '<b class="num">+' + Math.round(perH) + '/시간</b>' : '<b class="num off">정지</b>'}</span></div>`;
-  const nutr = `<div class="nflow"><div class="lbl">먹은 영양소 → 몸으로 바뀌는 중</div>
-    ${flowRow('탄수', st.S, 'g', 100, '에너지', Math.min(st.S * 60, rate) * 0.45)}
-    ${flowRow('물', st.gW || 0, 'ml', 750, '수분', Math.min((st.gW || 0) * 60, 900) * 0.03)}
-    ${flowRow('나트륨', st.gNa || 0, 'mg', 1000, '전해질', Math.min((st.gNa || 0) * 60, 1800) * 0.02)}</div>`;
-  return `<div class="intake ${compact ? 'compact' : ''}">${nutr}
-    <div class="lbl">시간당 먹는 속도 · 가운데 초록에 맞추기${recent ? '' : ' · 1시간째 아무것도 안 먹음'}</div>${TARGETS.map(([k, n, u, lo, hi2]) => {
-    const v = hi[k], max = lo + hi2, pos = Math.min(100, v / max * 100);
-    const st2 = v < lo ? (v < lo * 0.6 ? ['많이 부족', 'bad'] : ['부족', 'low']) : v > hi2 ? ['과다', 'over'] : ['적정', 'ok'];
-    const gap = v < lo ? `+${Math.round(lo - v)}${u} 필요` : v > hi2 ? `${Math.round(v - hi2)}${u} 초과` : '유지';
-    return `<div class="im"><div class="gl"><span>${n} <em class="tg ${st2[1]}">${st2[0]}</em></span><span class="num">${Math.round(v)}${u}/h · ${gap}</span></div>
-      <div class="tbar"><b style="left:${lo / max * 100}%;width:${(hi2 - lo) / max * 100}%"></b><i style="left:${pos}%"></i></div>
-      <div class="tticks"><span>0</span><span style="left:${lo / max * 100}%">${lo}</span><span style="left:${hi2 / max * 100}%">${hi2}</span><span style="left:100%">${max}${u}/h</span></div></div>`;
+  const rate = absorbRate(st);
+  const rows = [
+    ['c', '탄수', st.S, 'g', 100, '에너지', Math.min(st.S * 60, rate) * 0.45],
+    ['w', '물', st.gW || 0, 'ml', 750, '수분', Math.min((st.gW || 0) * 60, 900) * 0.03],
+    ['na', '나트륨', st.gNa || 0, 'mg', 1000, '전해질', Math.min((st.gNa || 0) * 60, 1800) * 0.02]
+  ];
+  return `<div class="intake ${compact ? 'compact' : ''}"><div class="lbl">영양소 · 시간당 적정량에 맞춰 꾸준히</div>${rows.map(([k, n, amt, u, max, target, perH]) => {
+    const T = TARGETS.find(x => x[0] === k), v = smoothIn[k], lo = T[3], hi2 = T[4];
+    const tag = v < lo ? (v < lo * 0.6 ? ['많이 부족', 'bad'] : ['부족', 'low']) : v > hi2 ? ['과다', 'over'] : ['적정', 'ok'];
+    return `<div class="nf ${amt > 0.5 ? 'on' : ''}"><span class="nt">${n} <em class="tg ${tag[1]}" title="최근 시간당 ${Math.round(v)}${u} · 적정 ${lo}–${hi2}${u}">${tag[0]}</em></span><span class="nbar" title="소화 중 ${Math.round(amt)}${u}"><i style="width:${Math.min(100, amt / max * 100)}%"></i></span><span class="arrow"><em></em><em></em><em></em></span><span class="nt2">${target} ${amt > 0.5 ? '<b class="num">+' + Math.round(perH) + '/h</b>' : '<b class="num off">—</b>'}</span></div>`;
   }).join('')}</div>`;
 }
 // What an item does to the gauges, shown on every supply card. ⏳ = arrives as the gut digests it.
@@ -1047,11 +1039,12 @@ const EXTRA_FX = {
 function effChips(it, k){
   const o = [];
   if (k === 'water' && it === FOOD.water) o.push(['물 1.5L 충전', 1]);
-  if (it.c) o.push([`탄수 +${it.c}g ➜ 에너지 +${Math.round(it.c * 0.45)}`, 2], [`더부룩함 +${it.c}`, 0]);
-  if (it.w) o.push([`물 +${it.w}ml ➜ 수분 +${Math.round(it.w * 0.03)}`, 2], [`화장실 +${Math.round(it.w * 0.02)}`, 0]);
-  if (it.na) o.push([`나트륨 +${it.na}mg ➜ 전해질 +${Math.round(it.na * 0.02)}`, 2]);
+  if (it.c) o.push([`탄수 ${it.c}g ➜ 에너지 +${Math.round(it.c * 0.45)}`, 2]);
+  if (it.w) o.push([`물 ${it.w}ml ➜ 수분 +${Math.round(it.w * 0.03)}`, 2]);
+  if (it.na >= 200) o.push([`나트륨 ${it.na}mg ➜ 전해질 +${Math.round(it.na * 0.02)}`, 2]);
   if (it.caf) o.push([`졸음 −${Math.round(it.caf * 0.3 / (1 + st.tot.caf / 400))}`, 1]);
   (EXTRA_FX[k] || []).forEach(x => o.push(x));
+  if (it.c >= 30) o.push([`더부룩함 +${it.c}`, 0]);
   return `<span class="ech">${o.map(([t, g]) => `<i class="${g === 2 ? 'in' : g ? 'up' : 'nt'}">${t}</i>`).join('')}</span>`;
 }
 function slopeNow(){ const g = (elevAt(st.km + 0.3) - elevAt(st.km)) / 300 * 100; return g; }
@@ -1296,7 +1289,7 @@ function openSupply(auto){
       + (st.B > 45 ? `<button type="button" class="opt ${recommend(st, 'pee') ? 'rec' : ''}" data-it="pee">${recommend(st, 'pee') ? '<span class="recb">추천</span>' : ''}${iconSVG('pee')}<span class="ot"><span class="on">노상 볼일</span><span class="oh">화장실 비우기 · 1.5분</span></span></button>` : '');
     $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">${st.km.toFixed(1)} km · ${fmtClock(st.t)}</div><h3 id="mTitle">${auto ? '보급 타이밍' : '보급 꺼내기'}</h3>
       <p>${auto ? flavor[Math.floor(st.km) % flavor.length] : '걸으면서 주머니에서 꺼내 먹어요.'}</p>
-      <div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div><div class="mbtns"><button type="button" class="btn primary" id="supDone">${used.length ? '계속 달리기' : '패스하고 달리기'}</button></div></div></div>`;
+      <div class="mini">${gaugeHTML(['E','H','Na','S'])}</div>${intakeHTML(false)}<div class="opts">${opts}</div><div class="mbtns"><button type="button" class="btn primary" id="supDone">${used.length ? '계속 달리기' : '패스하고 달리기'}</button></div></div></div>`;
     $('#modalRoot').querySelectorAll('[data-it]').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.it, a = snap();
       if (k === 'pee'){ st.B = 0; st.t += 1.5; st.M -= 1; const hc = clockHour(st.t); if ((hc >= 19.5 || hc < 6) && Math.random() < 0.4){ st.M -= 2; joke = '볼일 중 뒤 주자 헤드랜턴 다섯 개가 나를 비췄다. 무대 데뷔.'; } else if (Math.random() < 0.25){ joke = '바람 방향을 잘못 읽었다. 신발이 조금 젖었다.'; st.M -= 2; } }
@@ -1328,7 +1321,7 @@ function arriveCP(idx){
     const stop = [...sel].reduce((a, k) => a + FOOD[k].min, 0), dep = st.t + stop, margin = cp.cut - dep;
     const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''} ${recommend(st, k === 'water' ? 'refill' : k) ? 'rec' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${recommend(st, k === 'water' ? 'refill' : k) ? '<span class="recb">추천</span>' : ''}${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span>${k === 'water' ? `<span class="oh">남은 물 ${st.inv.water * 250}ml</span>` : ''}${effChips(FOOD[k], k)}</span><span class="om" ${k === 'water' ? 'style="right:24px"' : ''}>${FOOD[k].min}분</span>${k === 'water' ? `<span class="cnt" style="background:${st.inv.water <= 1 ? '#e8a09a' : '#8ec9d8'}">${st.inv.water}</span>` : ''}</button>`).join('');
     const pv = sel.size ? previewFx([...sel]) : [];
-    $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">CP${idx}${cp.crew ? ' · 크루 CP' : ''} · ${cp.km} km · 현재 ${rank}위</div><h3 id="mTitle">${cp.name}</h3><div class="mini">${gaugeHTML()}</div>${intakeHTML(false)}<div class="opts">${opts}</div>
+    $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">CP${idx}${cp.crew ? ' · 크루 CP' : ''} · ${cp.km} km · 현재 ${rank}위</div><h3 id="mTitle">${cp.name}</h3><div class="mini">${gaugeHTML()}</div><div class="opts">${opts}</div>
       <div class="sumline"><span>정차 <b class="num">${stop}분</b> · 출발 <b class="num">${fmtClock(dep)}</b></span><span class="${margin < 20 ? 'warn' : ''}">컷오프 ${fmtClock(cp.cut)} · 여유 <b class="num">${margin < 0 ? '초과!' : fmtDur(margin)}</b></span></div>
       <div class="mbtns"><button type="button" class="btn" id="cpPass">그냥 통과</button><button type="button" class="btn primary" id="cpGo" ${sel.size ? '' : 'disabled'}>먹고 출발</button></div></div></div>`;
     $('#modalRoot').querySelectorAll('[data-fd]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.fd; sel.has(k) ? sel.delete(k) : sel.add(k); draw(); if (sel.size) say('먹고 나면 이렇게 돼요', previewFx([...sel])); }));
