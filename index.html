@@ -1,0 +1,1066 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="트랜스제주 100마일 코스를 달리는 트레일러닝 시뮬레이션 게임">
+<title>트랜스제주 시뮬레이터</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: one-screen race console — island map (paper cut layers) left, runner gauges right, elevation strip below. Single committed look: matte paper cut-out on cream, thin brown outlines, flat colour, slightly tilted paper cards. */
+:root{
+  --paper:#efe7d4; --card:#fbf8f1; --card2:#f4eee0; --ink:#2b2420; --muted:#6b6052; --line:#c9bda6;
+  --blue:#1f5fae; --red:#b9322a; --red-d:#93241c; --yellow:#f2c230; --green:#7fae4e; --green-l:#9cc65e;
+  --sea:#8ec9d8; --skin:#f9d0b0; --shadow:rgba(43,36,32,.25);
+  --display:"Jua","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  color-scheme:light;
+}
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--body);font-size:15px;line-height:1.45}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.app{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:14px 28px;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;line-height:1.15}
+.paper{background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--shadow)}
+.tl{transform:rotate(-.5deg)} .tr{transform:rotate(.5deg)}
+.lbl{font-family:var(--display);font-size:13px;color:var(--muted);letter-spacing:.02em}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums}
+button{font-family:var(--display);color:var(--ink);cursor:pointer}
+.btn{border:2px solid var(--ink);border-radius:12px;background:var(--card);box-shadow:2px 2px 0 var(--shadow);padding:9px 14px;font-size:16px;min-height:44px;transition:transform .06s}
+.btn:active{transform:translate(2px,2px);box-shadow:none}
+.btn.primary{background:var(--red);color:#fbf8f1}
+.btn.blue{background:var(--blue);color:#fbf8f1}
+.btn.yellow{background:var(--yellow)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{font-size:14px;padding:5px 10px;min-height:36px}
+.btn.on{background:var(--ink);color:var(--card)}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+input[type=text]{font-family:var(--display);font-size:20px;border:2px solid var(--ink);border-radius:10px;background:#fff;padding:8px 12px;width:100%;color:var(--ink)}
+.sticker{display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--ink);border-radius:999px;background:var(--yellow);font-family:var(--display);padding:2px 10px}
+
+/* ---------- setup ---------- */
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:6px}
+.hero h1{font-size:clamp(30px,6vw,52px)}
+.hero h1 b{font-weight:400;color:var(--red)}
+.hero p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.facts{display:flex;gap:8px;flex-wrap:wrap}
+.fact{padding:6px 12px;background:var(--card);border:2px solid var(--ink);border-radius:12px;box-shadow:2px 2px 0 var(--shadow);text-align:center}
+.fact:nth-child(odd){transform:rotate(-1.2deg)} .fact:nth-child(even){transform:rotate(1deg)}
+.fact .v{font-family:var(--display);font-size:20px;line-height:1.1}
+.fact .k{font-size:12px;color:var(--muted)}
+.setup{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+.panel{padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h2{font-size:22px}
+.who{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center}
+.who .portrait{width:96px;height:96px}
+.colors{display:flex;gap:8px;margin-top:8px}
+.sw{width:34px;height:34px;border-radius:50%;border:2px solid var(--ink);padding:0}
+.sw.sel{box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--ink)}
+.pool{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.stats{display:flex;flex-direction:column;gap:6px}
+.srow{display:grid;grid-template-columns:76px minmax(0,1fr) 36px 30px 36px;gap:8px;align-items:center}
+.srow .nm{font-family:var(--display);font-size:17px;line-height:1}
+.srow .ds{font-size:11.5px;color:var(--muted);line-height:1.2}
+.pips{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px;height:18px}
+.pip{border:1.5px solid var(--ink);border-radius:3px;background:var(--card);padding:0;min-width:0}
+.pip.on{background:var(--blue)} .pip.base{background:#9fb8d8}
+.pm{width:36px;height:36px;border-radius:50%;border:2px solid var(--ink);background:var(--card);font-size:20px;line-height:1;padding:0}
+.sval{text-align:center;font-size:19px}
+.derived{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.dv{background:var(--card2);border:2px dashed var(--line);border-radius:12px;padding:8px 10px}
+.dv .v{font-family:var(--display);font-size:22px;line-height:1.1}
+.dv .k{font-size:12px;color:var(--muted)}
+.est{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border:2px solid var(--ink);border-radius:12px;background:var(--yellow);transform:rotate(-.6deg)}
+.est .v{font-family:var(--display);font-size:24px}
+.board{display:flex;flex-direction:column}
+.brow{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 2px;border-bottom:2px dashed var(--line)}
+.brow:last-child{border-bottom:0}
+.brow .rk{font-family:var(--display);font-size:18px;text-align:center}
+.brow .nm{font-family:var(--display);font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brow .sub{font-size:12px;color:var(--muted)}
+.brow .tm{font-family:var(--display);font-size:18px;font-variant-numeric:tabular-nums}
+.brow.me .nm{color:var(--red)}
+.empty{color:var(--muted);font-size:14px;padding:10px 2px}
+.cplist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;font-size:13px}
+.cplist span{display:flex;justify-content:space-between;gap:6px;border-bottom:1px dotted var(--line);padding:2px 0}
+.cplist b{font-weight:400;font-family:var(--display);color:var(--muted)}
+
+/* ---------- race ---------- */
+.topbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;padding:8px 12px}
+.tb-me{display:flex;align-items:center;gap:8px;min-width:0}
+.tb-me .nm{font-family:var(--display);font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-me .sub{font-size:12px;color:var(--muted)}
+.clock{text-align:center;background:var(--yellow);border:2px solid var(--ink);border-radius:10px;padding:2px 14px;transform:rotate(-2deg)}
+.clock .v{font-family:var(--display);font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.clock .k{font-size:11px}
+.ctrls{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap}
+.race{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+.mapbox{position:relative;overflow:hidden;padding:0;background:var(--sea)}
+.mapbox svg{display:block;width:100%;height:auto}
+.mapchips{position:absolute;left:10px;bottom:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.chip{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:3px 9px;font-family:var(--display);font-size:14px;box-shadow:2px 2px 0 var(--shadow)}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:12px 14px}
+.g .gl{display:flex;justify-content:space-between;font-family:var(--display);font-size:14px}
+.g .gl span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.gb{height:12px;border:2px solid var(--ink);border-radius:7px;background:var(--card);overflow:hidden;margin-top:2px}
+.gb i{display:block;height:100%;transition:width .2s}
+.status{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;min-height:0}
+.tag{font-size:12px;font-family:var(--display);border:1.5px solid var(--ink);border-radius:8px;padding:1px 7px;background:#f6d2b5}
+.paceset{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.next{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.next .row{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.next .row b{font-family:var(--display);font-weight:400;font-size:16px}
+.ranks{padding:10px 14px}
+.rk-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:8px;font-size:14px;padding:3px 0;border-bottom:1px dotted var(--line)}
+.rk-row:last-child{border-bottom:0}
+.rk-row.me{font-family:var(--display);color:var(--red)}
+.rk-row .n{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.rk-row .d{font-variant-numeric:tabular-nums;color:var(--muted)}
+.rk-row.me .d{color:var(--red)}
+.profile{padding:6px 8px 4px;overflow:hidden}
+.profile svg{display:block;width:100%;height:auto}
+.log{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:2px;max-height:86px;overflow:hidden}
+.log div:first-child{color:var(--ink)}
+
+/* ---------- modal ---------- */
+.ov{position:fixed;inset:0;background:rgba(43,36,32,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal{width:100%;max-width:520px;max-height:calc(100% - 8px);overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px;transform:rotate(-.7deg);animation:drop .22s ease-out}
+@keyframes drop{from{transform:translateY(-18px) rotate(-2deg);opacity:0}to{transform:rotate(-.7deg);opacity:1}}
+.modal h3{font-size:24px}
+.modal .kick{font-size:13px;color:var(--muted)}
+.modal p{margin:0}
+.mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 10px}
+.mini .g .gl{font-size:12px}
+.mini .gb{height:9px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.opt{display:flex;flex-direction:row;align-items:center;gap:9px;text-align:left;border:2px solid var(--ink);border-radius:12px;background:var(--card);padding:8px 10px;box-shadow:2px 2px 0 var(--shadow);min-height:56px;position:relative}
+.opt .ot{display:flex;flex-direction:column;gap:1px;min-width:0;padding-right:22px}
+.opt .on{font-size:16px;line-height:1.15}
+.opt .oh{font-family:var(--body);font-size:12px;color:var(--muted)}
+.opt .om{position:absolute;right:8px;top:7px;font-size:12px;color:var(--muted)}
+.opt.sel{background:#fff1b8;transform:translateY(-2px) rotate(-1deg);box-shadow:3px 4px 0 rgba(43,36,32,.35)}
+.opt.crew{border-style:dashed}
+.opt:disabled{opacity:.4}
+.opt .cnt{position:absolute;right:-7px;top:-9px;width:24px;height:24px;border-radius:50%;border:2px solid var(--ink);background:var(--yellow);font-size:13px;display:flex;align-items:center;justify-content:center}
+.fxline{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff1b8;border:2px solid var(--ink);border-radius:12px;transform:rotate(.4deg);font-size:14px}
+.fxline b{font-family:var(--display);font-weight:400;font-size:16px}
+.fxs{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.fx{font-family:var(--display);font-size:13px;border:1.5px solid var(--ink);border-radius:8px;padding:0 7px;background:var(--card)}
+.fx.up{background:#cfe6a8}.fx.dn{background:#f3c1bb}
+.sumline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;padding:8px 10px;background:var(--card2);border:2px dashed var(--line);border-radius:10px}
+.sumline b{font-family:var(--display);font-weight:400;font-size:17px}
+.warn{color:var(--red)}
+.mbtns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.toast{position:fixed;left:50%;top:16px;transform:translateX(-50%) rotate(-1deg);z-index:30;background:var(--card);border:2px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--shadow);padding:8px 14px;font-family:var(--display);font-size:16px;max-width:calc(100% - 32px);text-align:center;transition:opacity .3s;pointer-events:none}
+
+/* ---------- result ---------- */
+.result{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+.bigtime{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.bigtime .v{font-family:var(--display);font-size:clamp(40px,8vw,64px);line-height:1;font-variant-numeric:tabular-nums}
+.medal{width:86px;height:86px;border-radius:50%;border:3px solid var(--ink);background:var(--yellow);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--display);transform:rotate(-8deg);box-shadow:3px 3px 0 var(--shadow)}
+.medal b{font-weight:400;font-size:32px;line-height:1}
+.medal span{font-size:12px}
+.medal.dnf{background:#e8a09a}
+.splits{width:100%;border-collapse:collapse;font-size:14px}
+.splits th{font-family:var(--display);font-weight:400;color:var(--muted);text-align:left;padding:4px 6px;border-bottom:2px solid var(--ink)}
+.splits td{padding:5px 6px;border-bottom:1px dotted var(--line);font-variant-numeric:tabular-nums}
+.splits td:first-child{font-family:var(--display)}
+.tablewrap{overflow-x:auto}
+
+/* runner animation */
+.run .legA,.run .legB,.run .armA,.run .armB{transform-box:fill-box;transform-origin:50% 0}
+.run .legA{animation:sw .36s ease-in-out infinite alternate}
+.run .legB{animation:sw .36s ease-in-out infinite alternate-reverse}
+.run .armA{animation:sw .36s ease-in-out infinite alternate-reverse}
+.run .armB{animation:sw .36s ease-in-out infinite alternate}
+.run .bob{animation:bob .18s ease-in-out infinite alternate}
+@keyframes sw{from{transform:rotate(-22deg)}to{transform:rotate(22deg)}}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-1px)}}
+.paused .run *{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.run *{animation:none!important}.modal{animation:none}}
+
+@media (max-width:920px){
+  .setup,.result{grid-template-columns:minmax(0,1fr)}
+  .race{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .topbar{grid-template-columns:minmax(0,1fr) auto}
+  .ctrls{grid-column:1/-1;justify-content:flex-start}
+  .srow{grid-template-columns:62px minmax(0,1fr) 34px 26px 34px;gap:6px}
+  .srow .ds{display:none}
+  .derived{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .dv .v{font-size:18px}
+  .opts{grid-template-columns:minmax(0,1fr)}
+  .mini{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cplist{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+<script src="firebase-config.js"></script></head><body>
+<div class="app" id="app">
+
+<!-- ============ SETUP ============ -->
+<section id="scrSetup" style="display:flex;flex-direction:column;gap:16px">
+  <header class="hero">
+    <div>
+      <div class="lbl">TRANSJEJU 100M · 가상 레이스</div>
+      <h1>트랜스제주 <b>100마일</b> 시뮬레이터</h1>
+      <p>금요일 밤 9시 제주월드컵경기장 출발. 한라산 정상을 넘어 동쪽 들판과 숲을 돌아 다시 경기장으로. 보급과 CP 선택으로 가상 1위를 노리세요.</p>
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="v">148.8km</div><div class="k">거리</div></div>
+      <div class="fact"><div class="v">+4,834m</div><div class="k">누적 상승</div></div>
+      <div class="fact"><div class="v">37시간</div><div class="k">제한 시간</div></div>
+      <div class="fact"><div class="v">CP 11</div><div class="k">크루 3곳</div></div>
+    </div>
+  </header>
+
+  <div class="setup">
+    <div class="paper panel tl">
+      <div class="who">
+        <div class="portrait" id="portrait"></div>
+        <div>
+          <label class="lbl" for="nameInput">러너 이름</label>
+          <input type="text" id="nameInput" maxlength="12" placeholder="이름을 쓰세요" autocomplete="off">
+          <div class="colors" id="colors" role="radiogroup" aria-label="러닝복 색"></div>
+        </div>
+      </div>
+      <div class="pool">
+        <h2>스탯 분배</h2>
+        <span class="sticker" id="poolLeft">남은 포인트 0</span>
+      </div>
+      <div class="presets" id="presets"></div>
+      <div class="stats" id="stats"></div>
+      <div class="derived" id="derived"></div>
+      <div class="est"><div><div class="lbl" style="color:var(--ink)">이 빌드의 예상 완주</div><div class="v num" id="estTime">-</div></div><div style="font-size:13px;max-width:28ch">보급을 잘 챙겼을 때 기준. 가상 1위 목표는 22시간 초반.</div></div>
+      <button class="btn primary" id="startBtn" style="font-size:20px">출발선에 서기</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="paper panel tr">
+        <div class="pool"><h2>기록판</h2><span class="lbl" id="boardNote">완주 기록 순</span></div>
+        <div class="board" id="board"><div class="empty">기록을 불러오는 중…</div></div>
+      </div>
+      <div class="paper panel">
+        <h2>코스 CP</h2>
+        <div class="cplist" id="cplist"></div>
+        <div style="font-size:12.5px;color:var(--muted)">관음사 · 가시리 · 서귀포학생야영장은 크루 CP — 드롭백 재보급, 양말 교체, 파워냅을 할 수 있어요.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RACE ============ -->
+<section id="scrRace" hidden style="display:flex;flex-direction:column;gap:14px">
+  <div class="paper topbar">
+    <div class="tb-me"><div id="tbPortrait" style="width:44px;height:44px;flex:none"></div><div style="min-width:0"><div class="nm" id="tbName"></div><div class="sub" id="tbSub"></div></div></div>
+    <div class="clock"><div class="v" id="clock">금 21:00</div><div class="k" id="elapsed">경과 0:00</div></div>
+    <div class="ctrls" id="speedCtrls">
+      <button class="btn sm" data-sp="0">멈춤</button>
+      <button class="btn sm on" data-sp="1">×1</button>
+      <button class="btn sm" data-sp="2">×2</button>
+      <button class="btn sm" data-sp="4">×4</button>
+    </div>
+  </div>
+
+  <div class="race">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div class="paper mapbox" id="mapbox"></div>
+      <div class="paper profile" id="profileBox"></div>
+    </div>
+    <div class="side">
+      <div class="paper gauges" id="gauges"></div>
+      <div class="paper next">
+        <div class="lbl">페이스</div>
+        <div class="paceset" id="paceset"></div>
+        <button class="btn yellow" id="supplyBtn">보급 꺼내기</button>
+      </div>
+      <div class="paper next" id="nextBox"></div>
+      <div class="paper ranks"><div class="lbl" style="margin-bottom:4px">실시간 순위</div><div id="ranks"></div></div>
+      <div class="paper next"><div class="lbl">레이스 로그</div><div class="log" id="log"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RESULT ============ -->
+<section id="scrResult" hidden style="display:flex;flex-direction:column;gap:16px">
+  <div class="result">
+    <div class="paper panel tl" id="resultMain"></div>
+    <div class="paper panel tr">
+      <div class="pool"><h2>기록판</h2><span class="lbl" id="boardNote2">완주 기록 순</span></div>
+      <div class="board" id="board2"></div>
+    </div>
+  </div>
+</section>
+</div>
+<div id="modalRoot"></div>
+<div class="toast" id="toast" style="opacity:0"></div>
+<script>
+/*CORE*/
+// ---------- course data (TransJeju 100M, 148.8 km) ----------
+const START_CLOCK = 21 * 60; // Fri 21:00
+const STEP = 0.1;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const CPS = [
+  {name:'제주월드컵경기장', short:'출발', km:0, ele:47, lat:33.2465, lon:126.5093, cut:null},
+  {name:'서귀포 치유의숲', short:'치유의숲', km:7.2, ele:388, lat:33.3005, lon:126.5235, cut:100, menu:['water','cola','banana','fruit','toilet']},
+  {name:'영실 입구', short:'영실', km:20.3, ele:1180, lat:33.3466, lon:126.4946, cut:340, menu:['water','cola','banana','fruit','coffee','toilet','rest']},
+  {name:'어리목 입구', short:'어리목', km:28.7, ele:922, lat:33.3925, lon:126.4950, cut:490, menu:['water','cola','banana','riceball','coffee','toilet','rest']},
+  {name:'관음사 입구', short:'관음사', km:40.8, ele:540, lat:33.4237, lon:126.5545, cut:610, crew:true, menu:['water','cola','banana','fruit','riceball','noodle','coffee','toilet','rest']},
+  {name:'성판악 입구', short:'성판악', km:58.5, ele:728, lat:33.3848, lon:126.6197, cut:940, menu:['water','cola','banana','fruit','riceball','noodle','toilet','rest']},
+  {name:'정석항공관', short:'정석', km:74.4, ele:317, lat:33.4093, lon:126.7005, cut:1120, menu:['water','cola','banana','fruit','toilet','rest']},
+  {name:'가시리', short:'가시리', km:86.9, ele:240, lat:33.3640, lon:126.7380, cut:1300, crew:true, menu:['water','cola','banana','fruit','riceball','noodle','coffee','toilet','rest']},
+  {name:'머체왓숲길', short:'머체왓', km:106.5, ele:208, lat:33.3170, lon:126.6890, cut:1540, menu:['water','cola','banana','fruit','riceball','coffee','toilet','rest']},
+  {name:'이승악오름', short:'이승악', km:116.0, ele:382, lat:33.3087, lon:126.6115, cut:1680, menu:['water','cola','banana','fruit','coffee','toilet']},
+  {name:'서귀포학생야영장', short:'야영장', km:127.7, ele:458, lat:33.2968, lon:126.5880, cut:1860, crew:true, menu:['water','cola','banana','fruit','riceball','noodle','coffee','toilet','rest']},
+  {name:'서귀포 치유의숲', short:'치유의숲', km:137.2, ele:388, lat:33.3005, lon:126.5235, cut:2040, menu:['water','cola','banana','fruit','coffee','toilet']},
+  {name:'제주월드컵경기장', short:'피니시', km:148.8, ele:47, lat:33.2465, lon:126.5093, cut:2220}
+];
+const SEG = [
+  {gain:341, loss:3,   tech:1.10, via:[[33.272,126.512]]},
+  {gain:834, loss:42,  tech:1.25, via:[[33.318,126.506],[33.334,126.493]]},
+  {gain:478, loss:738, tech:1.35, key:[[0,1180],[2.6,1500],[5.0,1700],[6.6,1350],[8.4,922]], via:[[33.3626,126.5136]], viaKm:[5.0]},
+  {gain:158, loss:540, tech:1.20, via:[[33.406,126.519],[33.418,126.538]]},
+  {gain:1354,loss:1166,tech:1.40, key:[[0,540],[3.2,820],[6.4,1500],[8.7,1947],[11,1600],[13.5,1100],[17.7,728]], via:[[33.393,126.545],[33.3617,126.5292],[33.371,126.565]], viaKm:[6.4,8.7,11]},
+  {gain:45,  loss:456, tech:1.05, via:[[33.405,126.645],[33.402,126.672]]},
+  {gain:277, loss:354, tech:1.10, via:[[33.392,126.728]]},
+  {gain:294, loss:326, tech:1.15, via:[[33.338,126.748],[33.318,126.718]]},
+  {gain:268, loss:94,  tech:1.20, via:[[33.320,126.655]]},
+  {gain:383, loss:307, tech:1.15, via:[[33.306,126.598]]},
+  {gain:324, loss:394, tech:1.15, via:[[33.292,126.552]]},
+  {gain:78,  loss:419, tech:1.00, via:[[33.270,126.524]]}
+];
+const TOTAL_KM = 148.8;
+const SUMMIT_KM = 40.8 + 8.7;
+
+function buildProfile(){
+  const rnd = mulberry32(20261002);
+  const out = [];
+  for (let i = 0; i < SEG.length; i++){
+    const a = CPS[i], b = CPS[i+1], L = b.km - a.km, n = Math.round(L / STEP), s = SEG[i];
+    const seg = [];
+    if (s.key){
+      const k = s.key, ph = rnd() * 6.28;
+      for (let j = 0; j <= n; j++){
+        const x = j * L / n; let p = 0;
+        while (p < k.length - 2 && x > k[p+1][0]) p++;
+        const [x0,y0] = k[p], [x1,y1] = k[p+1], t = Math.min(1, Math.max(0, (x - x0) / (x1 - x0)));
+        seg.push(y0 + (y1 - y0) * (0.5 - 0.5 * Math.cos(Math.PI * t)) + 22 * Math.sin(x * 2.3 + ph) * Math.sin(Math.PI * t));
+      }
+    } else {
+      const ph = [rnd()*6.28, rnd()*6.28, rnd()*6.28], fr = [1 + rnd()*1.5, 3 + rnd()*3, 7 + rnd()*5];
+      const bias = (s.gain - s.loss) / (s.gain + s.loss + 1) * 1.1;
+      const d = []; let P = 0, N = 0;
+      for (let j = 0; j < n; j++){
+        const x = j / n;
+        const v = Math.sin(fr[0]*6.28*x + ph[0]) + 0.6*Math.sin(fr[1]*6.28*x + ph[1]) + 0.35*Math.sin(fr[2]*6.28*x + ph[2]) + bias;
+        d.push(v); if (v > 0) P += v; else N -= v;
+      }
+      let e = a.ele; seg.push(e);
+      d.forEach(v => { e += v > 0 ? v * s.gain / (P || 1) : (N ? v * s.loss / N : 0); seg.push(e); });
+    }
+    seg[seg.length - 1] = b.ele;
+    if (i > 0) seg.shift();
+    out.push(...seg);
+  }
+  return out;
+}
+const PROFILE = buildProfile();
+function elevAt(km){
+  const x = Math.max(0, Math.min(TOTAL_KM, km)) / STEP, i = Math.floor(x), f = x - i;
+  const a = PROFILE[i], b = PROFILE[Math.min(PROFILE.length - 1, i + 1)];
+  return a + (b - a) * f;
+}
+function segOf(km){ for (let i = 0; i < SEG.length; i++) if (km < CPS[i+1].km) return i; return SEG.length - 1; }
+
+// ---------- runner model ----------
+const STATS = [
+  {k:'end',  name:'체력',   desc:'평지 속도 · 에너지 소모'},
+  {k:'str',  name:'근력',   desc:'업힐 속도'},
+  {k:'agi',  name:'민첩성', desc:'다운힐 · 평지 · 넘어짐 방지'},
+  {k:'dur',  name:'내구도', desc:'근피로 누적 · 물집'},
+  {k:'flex', name:'유연성', desc:'다운힐 · 쥐(경련) 방지'},
+  {k:'dig',  name:'소화력', desc:'보급 흡수 · 위장 트러블'},
+  {k:'men',  name:'멘탈',   desc:'졸음 · 멘탈 소모 · 밤 구간'}
+];
+const STAT_MIN = 1, STAT_MAX = 10, STAT_POOL = 35, STAT_START = 3;
+// UI stats run 1–10; the model works on a 2–20 scale
+function scaleStats(raw){ const o = {}; for (const k in raw) o[k] = raw[k] * 2; return o; }
+function fmtPace(minPerKm){ if (!isFinite(minPerKm) || minPerKm <= 0) return "-'--\""; const t = Math.round(minPerKm * 60); return Math.floor(t / 60) + "'" + String(t % 60).padStart(2, '0') + '"'; }
+const PACE = {
+  easy: {name:'아끼기',     spd:0.88, drain:0.8, fat:0.72},
+  norm: {name:'보통',       spd:1.00, drain:1.0, fat:1.00},
+  push: {name:'밀어붙이기', spd:1.12, drain:1.3, fat:1.45}
+};
+function derive(s){
+  const cF = 0.5*s.end + 0.3*s.agi + 0.2*s.flex;
+  const cU = 0.5*s.str + 0.35*s.end + 0.15*s.dur;
+  const cD = 0.45*s.agi + 0.3*s.dur + 0.25*s.flex;
+  return { vF: 9 + 0.33*cF, VAM: 550 + 38*cU, DESC: 1600 + 90*cD, eff: 0.7 + 0.015*s.dig };
+}
+function paceHpk(d, km){
+  const sg = SEG[segOf(km)], g = (elevAt(km + STEP) - elevAt(km)) / (STEP * 1000);
+  let h = sg.tech / d.vF;
+  if (g > 0) h += g * 1000 / d.VAM;
+  else { const dg = -g; h += Math.max(dg - 0.04, 0) * 1000 / d.DESC - Math.min(dg, 0.04) * 1.6 / d.vF; }
+  return Math.max(h, 0.06);
+}
+const KIT = {gel:8, caf:2, bar:2, salt:6, water:4};
+function newRunner(raw){
+  const stats = scaleStats(raw);
+  return { raw:{...raw}, s:{...stats}, d:derive(stats), km:0, t:0, seg:0, pace:'norm',
+    E:90, H:90, Na:80, S:10, F:0, Z:10, M:85, B:15,
+    inv:{...KIT}, blister:false, cramp:0, holding:false, nextSupply:4.5,
+    cd:{}, flags:{}, splits:[{cp:0, arr:0, dep:0}], log:[], dnf:null, done:false, stopMin:0 };
+}
+function clockMin(t){ return START_CLOCK + t; }
+function clockHour(t){ return (clockMin(t) / 60) % 24; }
+function clamp(st){ for (const k of ['E','H','Na','S','F','Z','M','B']) st[k] = Math.max(0, Math.min(100, st[k])); }
+function speedMul(st){
+  let m = PACE[st.pace].spd;
+  if (st.E < 30) m *= 0.55 + 0.015*st.E;
+  if (st.H < 35) m *= 0.72 + 0.008*st.H;
+  if (st.Na < 20) m *= 0.9;
+  m *= 1 - 0.003*st.F;
+  if (st.Z > 55) m *= 1 - (st.Z - 55)*0.005;
+  m *= 0.88 + 0.0012*st.M;
+  if (st.S > 70) m *= 0.86;
+  if (st.B > 85) m *= 0.93;
+  if (st.blister) m *= 0.95;
+  if (st.cramp > 0) m *= 0.75;
+  if (st.holding) m *= 0.85;
+  const hc = clockHour(st.t), night = hc >= 19.5 || hc < 6;
+  if (night && SEG[st.seg].tech >= 1.2) m *= 0.92 + 0.003*st.s.agi;
+  return m;
+}
+function speedNow(st){ return speedMul(st) / paceHpk(st.d, st.km); }
+function physio(st, dt, dk, up, down){
+  const h = dt / 60, P = PACE[st.pace], s = st.s, hc = clockHour(st.t);
+  st.E -= 17 * P.drain * (1.25 - 0.025*s.end) * (up > 0 ? 1.25 : 1) * h;
+  const heat = (hc >= 10 && hc < 17) ? 5 : (hc >= 8 && hc < 19 ? 2 : 0);
+  st.H -= (7 + heat) * P.drain * h;
+  st.Na -= (3.5 + heat*0.4) * P.drain * h;
+  st.S -= (10 + 0.8*s.dig) * h;
+  st.B += 2.5 * h;
+  const awake = st.t / 60 + 15;
+  if (hc >= 23 || hc < 6) st.Z += (3 + awake*0.12) * (1.25 - 0.025*s.men) * h;
+  else if (hc >= 6 && hc < 10) st.Z -= 8 * h;
+  else st.Z += 0.8 * h;
+  st.F += (dk*0.15 + down*0.008*(1.6 - 0.05*s.dur) + up*0.0015) * P.fat;
+  const bad = (st.E<25)+(st.H<30)+(st.Na<25)+(st.S>70)+(st.Z>70)+(st.B>85)+(st.F>75);
+  st.M -= (1.0*(1.3 - 0.03*s.men) + bad*1.2) * h;
+  if (st.cramp > 0) st.cramp = Math.max(0, st.cramp - dt);
+  clamp(st);
+}
+function chance(p){ return Math.random() < p; }
+function rollEvents(st, km){
+  const s = st.s, g = (elevAt(km + STEP) - elevAt(km)) / (STEP*1000), P = PACE[st.pace], tech = SEG[st.seg].tech;
+  const ok = k => !(st.cd[k] > km);
+  if (g < -0.07 && ok('fall') && chance(0.004*(1.8 - 0.045*s.agi - 0.02*s.flex)*(1 + st.Z/70)*P.fat*(tech > 1.2 ? 1.5 : 1))){ st.cd.fall = km + 2; return {type:'fall'}; }
+  if ((st.Na < 25 || st.F > 65) && st.cramp <= 0 && ok('cramp') && chance(0.006*(1.7 - 0.04*s.flex)*(st.Na < 25 ? 1.6 : 0.5))){ st.cd.cramp = km + 4; return {type:'cramp'}; }
+  if (st.S > 72 && !st.holding && ok('gi') && chance(0.02*(1.5 - 0.04*s.dig))){ st.cd.gi = km + 3; return {type:'gi'}; }
+  if (st.F > 35 && !st.blister && ok('blister') && chance(0.002*(1.6 - 0.05*s.dur))){ st.blister = true; st.cd.blister = km + 10; return {type:'blister'}; }
+  if (st.E < 8 && ok('bonk')){ st.cd.bonk = km + 3; return {type:'bonk'}; }
+  if (st.M < 4 && ok('quit')){ st.cd.quit = km + 6; return {type:'quit'}; }
+  return null;
+}
+const SCENIC = [
+  {km:25.3, id:'witse', text:'윗세오름 평원. 구상나무 사이로 별이 쏟아진다.', M:6},
+  {km:SUMMIT_KM, id:'summit', text:'백록담 1,947m 정상! 한라산 꼭대기를 밟았다.', M:15},
+  {km:66, id:'saryeoni', text:'사려니 삼나무숲 길. 공기가 달다.', M:5},
+  {km:84.5, id:'pony', text:'가시리 들판의 조랑말들이 쳐다본다.', M:5},
+  {km:101, id:'cypress', text:'머체왓 편백숲. 발밑이 폭신하다.', M:4},
+  {km:131, id:'gyul', text:'귤밭 돌담 사잇길. 서귀포에 돌아왔다.', M:6}
+];
+function advance(st, dtMin){
+  let left = dtMin;
+  while (left > 1e-6){
+    const dt = Math.min(0.5, left); left -= dt;
+    const v = speedNow(st);
+    let dk = v * dt / 60, used = dt, hitCP = false;
+    const nextKm = CPS[st.seg + 1].km;
+    if (st.km + dk >= nextKm){ const need = nextKm - st.km; used = dt * need / dk; dk = need; hitCP = true; }
+    const k0 = st.km, e0 = elevAt(k0), e1 = elevAt(k0 + dk);
+    st.km = hitCP ? nextKm : k0 + dk; st.t += used;
+    physio(st, used, dk, Math.max(0, e1 - e0), Math.max(0, e0 - e1));
+    // time-of-day moments
+    for (const [tt, id] of [[540,'sun1'],[1980,'sun2']]) if (st.t >= tt && !st.flags[id]){ st.flags[id] = true; st.M += 10; st.Z -= 10; clamp(st); return {type:'scenic', text: id === 'sun1' ? '토요일 일출. 몸이 다시 깨어난다.' : '일요일 두 번째 일출. 거의 다 왔다.'}; }
+    for (const sc of SCENIC) if (st.km >= sc.km && !st.flags[sc.id]){ st.flags[sc.id] = true; st.M += sc.M; clamp(st); return {type:'scenic', text:sc.text}; }
+    if (hitCP) return {type:'cp', idx: st.seg + 1};
+    for (let m = Math.floor(k0*10) + 1; m <= Math.floor(st.km*10); m++){ const ev = rollEvents(st, m/10); if (ev) return ev; }
+    if (st.km >= st.nextSupply){ st.nextSupply = st.km + 5 + Math.random()*2; if (st.km < TOTAL_KM - 2) return {type:'supply'}; }
+  }
+  return null;
+}
+// ---------- supplies ----------
+const ITEMS = {
+  gel:   {name:'에너지젤',   min:0.3, hint:'에너지↑ 위장 조금', fx:st => { st.E += 20*st.d.eff; st.S += 9; }},
+  caf:   {name:'카페인젤',   min:0.3, hint:'에너지↑ 졸음↓↓',    fx:st => { st.E += 16*st.d.eff; st.Z -= 30; st.S += 10; st.M += 4; }},
+  bar:   {name:'에너지바',   min:1.0, hint:'에너지↑↑ 위장↑',    fx:st => { st.E += 30*st.d.eff; st.S += 18; }},
+  salt:  {name:'소금캡슐',   min:0.2, hint:'전해질↑',            fx:st => { st.Na += 25; st.S += 2; }},
+  water: {name:'물 마시기',  min:0.3, hint:'수분↑ 화장실↑',      fx:st => { st.H += 16; st.B += 7; st.Na -= 2; }}
+};
+const FOOD = {
+  water:   {name:'물통 채우기',   min:1, hint:'물 4모금 충전',        fx:st => { st.inv.water = 4; }},
+  cola:    {name:'콜라',          min:1, hint:'에너지·졸음↓',         fx:st => { st.E += 10*st.d.eff; st.Z -= 15; st.H += 6; st.S += 5; st.B += 4; }},
+  banana:  {name:'바나나',        min:1, hint:'에너지·전해질',        fx:st => { st.E += 12*st.d.eff; st.Na += 4; st.S += 6; }},
+  fruit:   {name:'수박·귤',       min:1, hint:'수분·멘탈',            fx:st => { st.H += 12; st.E += 6*st.d.eff; st.S += 3; st.M += 3; }},
+  riceball:{name:'주먹밥',        min:2, hint:'에너지↑↑ 위장↑',       fx:st => { st.E += 24*st.d.eff; st.Na += 6; st.S += 15; }},
+  noodle:  {name:'따뜻한 국수',   min:5, hint:'에너지·전해질·멘탈↑↑', fx:st => { st.E += 28*st.d.eff; st.Na += 25; st.H += 10; st.S += 18; st.M += 10; }},
+  coffee:  {name:'커피',          min:1, hint:'졸음↓↓',               fx:st => { st.Z -= 25; st.S += 3; st.B += 5; }},
+  toilet:  {name:'화장실',        min:3, hint:'화장실 비우기·위장 편하게', fx:st => { st.B = 0; st.S -= 25; st.holding = false; }},
+  rest:    {name:'의자에 앉아 쉬기', min:5, hint:'멘탈↑ 근피로 조금↓', fx:st => { st.F -= 3; st.M += 8; st.Z += 3; }},
+  dropbag: {name:'드롭백 재보급', min:3, hint:'젤·바·소금 다시 채우기', crew:true, fx:st => { st.inv = {...KIT, water: st.inv.water}; }},
+  socks:   {name:'양말·신발 교체', min:6, hint:'물집 해결',          crew:true, fx:st => { st.blister = false; st.F -= 2; st.M += 5; }},
+  nap:     {name:'파워냅 15분',   min:15, hint:'졸음 리셋·멘탈↑↑',   crew:true, fx:st => { st.Z = 5; st.M += 15; }},
+  massage: {name:'크루 마사지',   min:8, hint:'근피로↓↓',            crew:true, fx:st => { st.F -= 8; st.M += 4; }}
+};
+// ---------- rivals ----------
+const RIVAL_PRE = ['백록담','올레','현무암','돌하르방','조랑말','한라봉','곶자왈','바람의 섬','해녀','오름','귤밭','삼다수','성산','우도','협재','사려니','윗세','영실','관음사','성판악','가시리','표선','중문','애월','함덕','비자림','동백','유채꽃','감귤','흑돼지','갈치','몸국','고사리','억새','용눈이','새별','물영아리','따라비','다랑쉬','한라'];
+const RIVAL_SUF = ['질주자','사냥꾼','폭주기관차','다람쥐','산양','바람','러너','탐험가','방랑자','달리미','고라니','토끼','독수리','노루','날쌘돌이'];
+const RIVAL_N = 100;
+const RIVALS = (() => {
+  const rnd = mulberry32(4801), combos = [];
+  for (const p of RIVAL_PRE) for (const q of RIVAL_SUF) combos.push(p + ' ' + q);
+  for (let i = combos.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [combos[i], combos[j]] = [combos[j], combos[i]]; }
+  return combos.slice(0, RIVAL_N).map((n, i) => [n, Math.round(1335 + 865 * Math.pow(i / (RIVAL_N - 1), 1.35))]);
+})();
+function stdCum(){
+  const d = derive({end:10,str:10,agi:10,dur:10,flex:10,dig:10,men:10});
+  const cum = [0]; let t = 0;
+  for (let i = 0; i < SEG.length; i++){
+    for (let k = CPS[i].km; k < CPS[i+1].km - 1e-9; k += STEP) t += paceHpk(d, k) * STEP * 60 * (1 + 0.18 * k / TOTAL_KM);
+    t += 3; cum.push(t);
+  }
+  return cum;
+}
+function makeRivals(seed){
+  const rnd = mulberry32(seed), cum = stdCum(), last = cum[cum.length - 1];
+  return RIVALS.map(([name, target], ri) => {
+    const style = (rnd() - 0.5) * 0.08; // + climber / - runner
+    const segs = []; for (let i = 1; i < cum.length; i++){ const climb = SEG[i-1].gain / (CPS[i].km - CPS[i-1].km) > 40; segs.push((cum[i] - cum[i-1]) * (1 + (climb ? -style : style) + (rnd() - 0.5) * 0.1)); }
+    const tot = segs.reduce((a, b) => a + b, 0), cpT = [0]; let acc = 0;
+    segs.forEach(x => { acc += x * target / tot; cpT.push(acc); });
+    return { name, target, cpT, idx: ri };
+  });
+}
+function rivalKm(r, t){
+  if (t >= r.target) return TOTAL_KM;
+  let i = 0; while (i < r.cpT.length - 2 && t >= r.cpT[i+1]) i++;
+  const f = (t - r.cpT[i]) / (r.cpT[i+1] - r.cpT[i]);
+  return CPS[i].km + (CPS[i+1].km - CPS[i].km) * Math.max(0, Math.min(1, f));
+}
+/*ENDCORE*/
+// ================= UI =================
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = { get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
+const DAYS = ['금','토','일','월'];
+function fmtClock(t){ const m = Math.floor(clockMin(t)); return DAYS[Math.floor(m / 1440)] + ' ' + String(Math.floor(m % 1440 / 60)).padStart(2,'0') + ':' + String(m % 60).padStart(2,'0'); }
+function fmtDur(t, sec){ const m = Math.max(0, t); const h = Math.floor(m / 60), mm = Math.floor(m % 60); if (!sec) return h + ':' + String(mm).padStart(2,'0'); return h + ':' + String(mm).padStart(2,'0') + ':' + String(Math.floor((m * 60) % 60)).padStart(2,'0'); }
+const COLORS = [['#1f5fae','파랑'],['#b9322a','빨강'],['#f2c230','노랑'],['#4f8f3a','초록']];
+function darker(hex){ const n = parseInt(hex.slice(1), 16); const f = c => Math.max(0, Math.round(c * 0.72)); return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(f).map(v => v.toString(16).padStart(2,'0')).join(''); }
+
+// ---------- cut-out runner ----------
+function runnerInner(color, bib){
+  const dk = darker(color);
+  return `<ellipse cx="20" cy="38.4" rx="9" ry="1.6" fill="#000" opacity=".16"/>
+<g stroke="#3a261c" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round">
+<g class="legB"><rect x="20.6" y="30.5" width="3.6" height="6.4" rx="1.6" fill="#f9d0b0"/><path d="M20.2 36.4 Q20.2 35.4 21.6 35.4 L24.4 35.4 Q26.6 35.6 26.4 38 L20.4 38 Z" fill="${dk}"/></g>
+<g class="armB"><circle cx="29" cy="24.6" r="2.4" fill="#f9d0b0"/></g>
+<g class="bob">
+<g class="legA"><rect x="15.6" y="30.5" width="3.6" height="6.4" rx="1.6" fill="#f9d0b0"/><path d="M15.2 36.4 Q15.2 35.4 16.6 35.4 L19.4 35.4 Q21.6 35.6 21.4 38 L15.4 38 Z" fill="${dk}"/></g>
+<path d="M12.4 31 L27.6 31 L27.2 33.6 L20.6 33.6 L20 32.4 L19.4 33.6 L12.8 33.6 Z" fill="#2b2420"/>
+<path d="M12.6 22.4 Q20 19.8 27.4 22.4 L28 31.4 L12 31.4 Z" fill="${color}"/>
+<rect x="15.2" y="24.4" width="9.6" height="5.2" rx="0.8" fill="#fbf8f1" stroke-width="0.8"/>
+<text x="20" y="28.4" text-anchor="middle" font-size="3.6" font-family="Jua, sans-serif" fill="#2b2420" stroke="none">${esc(bib)}</text>
+<g class="armA"><circle cx="11" cy="26.4" r="2.4" fill="#f9d0b0"/></g>
+<circle cx="11.2" cy="14.8" r="1.5" fill="#f9d0b0"/><circle cx="28.8" cy="14.8" r="1.5" fill="#f9d0b0"/>
+<circle cx="20" cy="13.6" r="8.8" fill="#f9d0b0"/>
+<path d="M11.2 12.6 C11.2 3.4 28.8 3.4 28.8 12.6 Q24.6 8.8 20 9.6 Q15.4 8.8 11.2 12.6 Z" fill="#6b4120"/>
+<rect x="10.6" y="9.8" width="18.8" height="2.9" rx="1.4" fill="${color}"/>
+<path d="M29.2 11 L32.6 9.2 L32 12.4 Z" fill="${color}" stroke-width="0.8"/>
+<circle cx="16.6" cy="15.2" r="3" fill="#fff" stroke-width="1"/><circle cx="23.4" cy="15.2" r="3" fill="#fff" stroke-width="1"/>
+<circle cx="17.4" cy="15.6" r="1.15" fill="#3a261c" stroke="none"/><circle cx="22.6" cy="15.6" r="1.15" fill="#3a261c" stroke="none"/>
+<ellipse cx="13.6" cy="19" rx="1" ry=".6" fill="#f0a48e" stroke="none"/><ellipse cx="26.4" cy="19" rx="1" ry=".6" fill="#f0a48e" stroke="none"/>
+<path d="M18.4 19.4 Q20 20.8 21.6 19.4" fill="none" stroke-width=".8"/>
+</g></g>`;
+}
+function runnerSVG(color, bib, size, run){
+  return `<svg viewBox="0 0 40 40" width="${size}" height="${size}" class="${run ? 'run' : ''}" style="display:block;overflow:visible;filter:drop-shadow(1.4px 0 0 #fff) drop-shadow(-1.4px 0 0 #fff) drop-shadow(0 1.4px 0 #fff) drop-shadow(0 -1.4px 0 #fff) drop-shadow(2px 3px 0 rgba(43,36,32,.3))" aria-hidden="true">${runnerInner(color, bib)}</svg>`;
+}
+
+// ---------- projection & route ----------
+const VIEW = {lon0:126.385, lat0:33.478, kx:92.9, ky:111, s:24};
+const MW = Math.round((126.845 - VIEW.lon0) * VIEW.kx * VIEW.s), MH = Math.round((VIEW.lat0 - 33.19) * VIEW.ky * VIEW.s);
+function P(lat, lon){ return [(lon - VIEW.lon0) * VIEW.kx * VIEW.s, (VIEW.lat0 - lat) * VIEW.ky * VIEW.s]; }
+const ROUTE = SEG.map((sg, i) => {
+  const a = CPS[i], b = CPS[i+1], pts = [[a.lat, a.lon], ...sg.via, [b.lat, b.lon]].map(p => P(p[0], p[1]));
+  let kms;
+  if (sg.viaKm) kms = [0, ...sg.viaKm, b.km - a.km];
+  else { const L = [0]; for (let j = 1; j < pts.length; j++) L.push(L[j-1] + Math.hypot(pts[j][0] - pts[j-1][0], pts[j][1] - pts[j-1][1])); kms = L.map(l => l / L[L.length - 1] * (b.km - a.km)); }
+  return { pts, kms: kms.map(k => k + a.km) };
+});
+function routePos(km){
+  const r = ROUTE[segOf(Math.min(km, TOTAL_KM - 1e-6))];
+  for (let j = 1; j < r.pts.length; j++) if (km <= r.kms[j] || j === r.pts.length - 1){
+    const f = Math.max(0, Math.min(1, (km - r.kms[j-1]) / (r.kms[j] - r.kms[j-1] || 1)));
+    return [r.pts[j-1][0] + (r.pts[j][0] - r.pts[j-1][0]) * f, r.pts[j-1][1] + (r.pts[j][1] - r.pts[j-1][1]) * f];
+  }
+  return r.pts[r.pts.length - 1];
+}
+function smoothClosed(pts){
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length; i++){
+    const p0 = pts[(i - 1 + pts.length) % pts.length], p1 = pts[i], p2 = pts[(i + 1) % pts.length], p3 = pts[(i + 2) % pts.length];
+    d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d + 'Z';
+}
+function smoothOpen(pts){
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++){
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+const COAST = [[33.300,126.163],[33.345,126.180],[33.395,126.230],[33.420,126.265],[33.450,126.300],[33.470,126.340],[33.485,126.400],[33.500,126.460],[33.515,126.500],[33.517,126.540],[33.530,126.590],[33.545,126.640],[33.555,126.700],[33.560,126.760],[33.545,126.810],[33.520,126.860],[33.490,126.900],[33.465,126.935],[33.452,126.945],[33.430,126.928],[33.400,126.900],[33.362,126.872],[33.328,126.845],[33.300,126.792],[33.280,126.735],[33.266,126.672],[33.252,126.612],[33.240,126.560],[33.232,126.505],[33.240,126.448],[33.236,126.400],[33.226,126.340],[33.206,126.300],[33.200,126.270],[33.214,126.230],[33.250,126.190]];
+function blob(lat, lon, rxKm, ryKm, rot, seed, wob){
+  const rnd = mulberry32(seed), [cx, cy] = P(lat, lon), n = 40, ph = [rnd()*6.3, rnd()*6.3, rnd()*6.3], pts = [];
+  for (let i = 0; i < n; i++){
+    const a = i / n * Math.PI * 2, w = 1 + wob * (0.5*Math.sin(3*a + ph[0]) + 0.3*Math.sin(5*a + ph[1]) + 0.2*Math.sin(9*a + ph[2]));
+    const x = Math.cos(a) * rxKm * VIEW.s * w, y = Math.sin(a) * ryKm * VIEW.s * w, c = Math.cos(rot), s = Math.sin(rot);
+    pts.push([cx + x*c - y*s, cy + x*s + y*c]);
+  }
+  return smoothClosed(pts);
+}
+function buildMap(){
+  const coast = smoothClosed(COAST.map(p => P(p[0], p[1])));
+  const H = [33.3617, 126.5292], rot = -0.12;
+  const layers = [[34,16,'#c6d58a'],[26,12.5,'#b2cb72'],[19,9.6,'#9cc65e'],[13,7,'#86b552'],[8.5,4.9,'#6f9f47'],[4.6,3.0,'#5d8a3e'],[2.0,1.5,'#b9a98c']];
+  let s = `<svg viewBox="0 0 ${MW} ${MH}" role="img" aria-label="트랜스제주 100마일 코스 지도">
+<defs>
+<filter id="lift" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="4" stdDeviation="0" flood-color="#2b2420" flood-opacity=".22"/></filter>
+<filter id="liftS" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="1.5" dy="2.5" stdDeviation="0" flood-color="#2b2420" flood-opacity=".28"/></filter>
+<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .17  0 0 0 0 .14  0 0 0 0 .12  0 0 0 .5 0"/></filter>
+<clipPath id="isl"><path d="${coast}"/></clipPath>
+</defs>
+<rect width="${MW}" height="${MH}" fill="#8ec9d8"/>`;
+  for (let i = 0; i < 9; i++){ const y = 40 + i * 92, x0 = (i % 2) * 60; s += `<path d="M${x0} ${y} q 30 -12 60 0 t 60 0 M${x0 + 520} ${y + 40} q 30 -12 60 0 t 60 0" fill="none" stroke="#6fb2c4" stroke-width="3" stroke-linecap="round" opacity=".7"/>`; }
+  s += `<path d="${coast}" fill="#e9dcb8" stroke="#2b2420" stroke-width="2.5" filter="url(#lift)"/><g clip-path="url(#isl)">`;
+  layers.forEach((l, i) => { s += `<path d="${blob(H[0] + 0.004*i, H[1] + 0.006*i, l[0], l[1], rot, 300 + i, 0.08 + 0.02*i)}" fill="${l[2]}" stroke="#2b2420" stroke-width="1.6" filter="url(#lift)"/>`; });
+  s += `<ellipse cx="${P(H[0],H[1])[0]}" cy="${P(H[0],H[1])[1]}" rx="14" ry="10" fill="#7fb7c7" stroke="#2b2420" stroke-width="1.6"/>`;
+  // oreums
+  const OR = [[33.371,126.690],[33.384,126.762],[33.420,126.705],[33.335,126.668],[33.3087,126.6115],[33.402,126.786],[33.356,126.805],[33.282,126.660],[33.440,126.622],[33.300,126.452],[33.330,126.432],[33.268,126.445],[33.430,126.470],[33.452,126.560],[33.432,126.760],[33.320,126.780],[33.262,126.600]];
+  OR.forEach((o, i) => { const [x, y] = P(o[0], o[1]), r = 13 + (i * 7 % 9); s += `<g filter="url(#liftS)"><path d="M${x - r * 1.5} ${y + r * .5} Q${x - r * .6} ${y - r * 1.1} ${x} ${y - r * 1.05} Q${x + r * .6} ${y - r * 1.1} ${x + r * 1.5} ${y + r * .5} Z" fill="${i % 2 ? '#86b552' : '#79aa4c'}" stroke="#2b2420" stroke-width="1.4"/><ellipse cx="${x}" cy="${y - r * .78}" rx="${r * .42}" ry="${r * .14}" fill="#5d8a3e" stroke="#2b2420" stroke-width="1"/></g>`; });
+  // forests
+  const FOR = [[33.300,126.528,7],[33.412,126.640,10],[33.420,126.660,6],[33.318,126.700,8],[33.292,126.585,5],[33.345,126.592,6],[33.375,126.650,6]];
+  FOR.forEach((f, fi) => { const rnd = mulberry32(900 + fi), [cx, cy] = P(f[0], f[1]); for (let k = 0; k < f[2]; k++){ const x = cx + (rnd() - .5) * 90, y = cy + (rnd() - .5) * 50, h = 16 + rnd() * 8; s += `<path d="M${x} ${y - h} L${x + h * .42} ${y} L${x - h * .42} ${y} Z" fill="${k % 2 ? '#3f7a3a' : '#4f8f3a'}" stroke="#2b2420" stroke-width="1.2"/><rect x="${x - 1.2}" y="${y}" width="2.4" height="4" fill="#6b4120"/>`; } });
+  // tangerines
+  { const rnd = mulberry32(77); for (let k = 0; k < 26; k++){ const [x, y] = P(33.258 + rnd() * 0.03, 126.53 + rnd() * 0.16); s += `<circle cx="${x}" cy="${y}" r="4.2" fill="#f29a2e" stroke="#2b2420" stroke-width="1"/>`; } }
+  s += `<rect x="0" y="0" width="${MW}" height="${MH}" filter="url(#grain)" opacity=".35"/></g>`;
+  // place labels
+  const LB = [[33.252,126.565,'서귀포'],[33.250,126.420,'중문'],[33.288,126.735,'남원'],[33.342,126.828,'표선'],[33.335,126.535,'한라산'],[33.462,126.530,'제주시 ↑']];
+  LB.forEach(l => { const [x, y] = P(l[0], l[1]); s += `<text x="${x}" y="${y}" text-anchor="middle" font-family="Jua, sans-serif" font-size="${l[2] === '한라산' ? 30 : 22}" fill="#2b2420" stroke="#fbf8f1" stroke-width="5" paint-order="stroke">${l[2]}</text>`; });
+  // route
+  const all = []; ROUTE.forEach((r, i) => r.pts.forEach((p, j) => { if (i === 0 || j > 0) all.push(p); }));
+  s += `<path d="${smoothOpen(all)}" fill="none" stroke="#fbf8f1" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s += `<path d="${smoothOpen(all)}" fill="none" stroke="#6b4120" stroke-width="3.5" stroke-dasharray="8 7" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s += `<path id="routeDone" d="" fill="none" stroke="#b9322a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // summit flag
+  { const [x, y] = routePos(SUMMIT_KM); s += `<g filter="url(#liftS)"><rect x="${x - 1.5}" y="${y - 42}" width="3" height="40" fill="#6b4120" stroke="#2b2420" stroke-width="1"/><path d="M${x + 1.5} ${y - 42} L${x + 26} ${y - 35} L${x + 1.5} ${y - 28} Z" fill="#f2c230" stroke="#2b2420" stroke-width="1.4"/></g><text x="${x + 6}" y="${y - 46}" font-family="Jua, sans-serif" font-size="17" fill="#2b2420" stroke="#fbf8f1" stroke-width="4" paint-order="stroke">백록담 1,947</text>`; }
+  // CPs (skip duplicate healing forest second marker)
+  CPS.forEach((c, i) => {
+    if (i === 11 || i === 12) return;
+    const [x, y] = routePos(c.km), lab = i === 0 ? 'S/F' : String(i);
+    s += `<g id="cp${i}" filter="url(#liftS)"><circle cx="${x}" cy="${y}" r="${i === 0 ? 17 : 14}" fill="#fbf8f1" stroke="#2b2420" stroke-width="2.2"/><text x="${x}" y="${y + 5.5}" text-anchor="middle" font-family="Jua, sans-serif" font-size="${i === 0 ? 13 : 15}" fill="#2b2420">${i === 1 ? '1·11' : lab}</text></g>`;
+    if (c.crew) s += `<text x="${x}" y="${y + 31}" text-anchor="middle" font-family="Jua, sans-serif" font-size="13" fill="#1f5fae" stroke="#fbf8f1" stroke-width="4" paint-order="stroke">크루</text>`;
+  });
+  s += `<rect id="night" width="${MW}" height="${MH}" fill="#1b2650" opacity="0" pointer-events="none"/>`;
+  s += `<g id="rivalDots"></g><g id="meTok"></g>`;
+  s += `<g id="sky" transform="translate(${MW - 70},60)"></g>`;
+  // inset island
+  { const sc = 0.16, ix = MW - 0.82 * VIEW.kx * VIEW.s * sc - 26, iy = MH - 0.4 * VIEW.ky * VIEW.s * sc - 26, ins = COAST.map(p => [ix + (p[1] - 126.15) * VIEW.kx * VIEW.s * sc, iy + (33.575 - p[0]) * VIEW.ky * VIEW.s * sc]);
+    const vx = ix + (VIEW.lon0 - 126.15) * VIEW.kx * VIEW.s * sc, vy = iy + (33.575 - VIEW.lat0) * VIEW.ky * VIEW.s * sc;
+    s += `<g filter="url(#liftS)"><rect x="${ix - 8}" y="${iy - 8}" width="${(0.82 * VIEW.kx * VIEW.s * sc) + 16}" height="${(0.4 * VIEW.ky * VIEW.s * sc) + 16}" rx="10" fill="#fbf8f1" stroke="#2b2420" stroke-width="2"/></g><path d="${smoothClosed(ins)}" fill="#c6d58a" stroke="#2b2420" stroke-width="1.4"/><rect x="${vx}" y="${vy}" width="${MW * sc}" height="${MH * sc}" fill="none" stroke="#b9322a" stroke-width="2" stroke-dasharray="4 3"/>`; }
+  s += `</svg><div class="mapchips"><span class="chip" id="chipRank">순위 -</span><span class="chip" id="chipKm">0.0 km</span><span class="chip" id="chipEle">47 m</span></div>`;
+  $('#mapbox').innerHTML = s;
+  // tokens
+  const rd = $('#rivalDots');
+  rd.innerHTML = rivals.map((r, i) => i === 0 ? '' : `<g id="rv${i}"><circle r="5.5" fill="#fbf8f1" stroke="#2b2420" stroke-width="1.4"/></g>`).reverse().join('') + `<g id="rv0"><circle r="10" fill="#f2c230" stroke="#2b2420" stroke-width="1.8"/><text y="4.5" text-anchor="middle" font-family="Jua, sans-serif" font-size="12" fill="#2b2420">1</text></g>`;
+  $('#meTok').innerHTML = `<g class="run"><g transform="translate(-26,-50) scale(1.3)" style="filter:drop-shadow(1.4px 0 0 #fff) drop-shadow(-1.4px 0 0 #fff) drop-shadow(0 1.4px 0 #fff) drop-shadow(0 -1.4px 0 #fff) drop-shadow(2px 3px 0 rgba(43,36,32,.3))">${runnerInner(me.color, me.bib)}</g></g>`;
+}
+function drawProfile(){
+  const W = 1000, H = 150, X = k => 14 + k / TOTAL_KM * 972, Y = e => 128 - e / 2000 * 108;
+  let pts = [], d = `M${X(0)},${H - 6}`;
+  for (let k = 0; k <= TOTAL_KM; k += 0.4) d += ` L${X(k).toFixed(1)},${Y(elevAt(k)).toFixed(1)}`;
+  d += ` L${X(TOTAL_KM)},${Y(47)} L${X(TOTAL_KM)},${H - 6} Z`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="고도 프로필"><path d="${d}" fill="#9cc65e" stroke="#2b2420" stroke-width="2" stroke-linejoin="round" style="filter:drop-shadow(0 3px 0 rgba(43,36,32,.2))"/>`;
+  s += `<path id="profDone" d="" fill="#b9322a" opacity=".22"/>`;
+  [500, 1000, 1500].forEach(e => { s += `<line x1="14" x2="986" y1="${Y(e)}" y2="${Y(e)}" stroke="#2b2420" stroke-width="1" stroke-dasharray="2 5" opacity=".35"/><text x="988" y="${Y(e) + 4}" font-size="11" font-family="Jua, sans-serif" fill="#6b6052">${e}</text>`; });
+  CPS.forEach((c, i) => { if (i === 0 || i === CPS.length - 1) return; const x = X(c.km), y = Y(c.ele); s += `<line x1="${x}" x2="${x}" y1="${y}" y2="${H - 6}" stroke="#2b2420" stroke-width="1" opacity=".5"/><circle cx="${x}" cy="${y}" r="8.5" fill="${c.crew ? '#1f5fae' : '#fbf8f1'}" stroke="#2b2420" stroke-width="1.6"/><text x="${x}" y="${y + 3.6}" text-anchor="middle" font-size="10" font-family="Jua, sans-serif" fill="${c.crew ? '#fbf8f1' : '#2b2420'}">${i}</text>`; });
+  s += `<text x="${X(SUMMIT_KM)}" y="${Y(1947) - 6}" text-anchor="middle" font-size="12" font-family="Jua, sans-serif" fill="#2b2420">백록담</text>`;
+  s += `<g id="profRivals"></g><line id="profLine" x1="14" x2="14" y1="10" y2="${H - 6}" stroke="#b9322a" stroke-width="2.5"/><circle id="profMe" cx="14" cy="${Y(47)}" r="6" fill="#b9322a" stroke="#2b2420" stroke-width="1.6"/>`;
+  s += `</svg>`;
+  $('#profileBox').innerHTML = s;
+  $('#profRivals').innerHTML = rivals.map((r, i) => i === 0 ? '' : `<circle id="pr${i}" r="2.6" fill="#fbf8f1" stroke="#2b2420" stroke-width="1"/>`).join('') + `<circle id="pr0" r="4.2" fill="#f2c230" stroke="#2b2420" stroke-width="1.3"/>`;
+  drawProfile.X = X; drawProfile.Y = Y;
+}
+
+// ---------- setup screen ----------
+const PRESETS = [
+  ['초기화', Object.fromEntries(STATS.map(x => [x.k, STAT_START]))],
+  ['밸런스', {end:5,str:5,agi:5,dur:5,flex:5,dig:5,men:5}],
+  ['산악형', {end:6,str:9,agi:4,dur:5,flex:3,dig:4,men:4}],
+  ['로드형', {end:9,str:4,agi:6,dur:5,flex:4,dig:4,men:3}],
+  ['다운힐형', {end:5,str:4,agi:9,dur:6,flex:5,dig:3,men:3}]
+];
+let stats = Object.fromEntries(STATS.map(x => [x.k, STAT_START]));
+const me = { name: LS.get('tj.name', ''), color: LS.get('tj.color', COLORS[0][0]), bib: String(100 + Math.floor(Math.random() * 899)), pid: LS.get('tj.pid', null) };
+if (!me.pid){ me.pid = 'p' + Math.random().toString(36).slice(2, 10); LS.set('tj.pid', me.pid); }
+function used(){ return STATS.reduce((a, s) => a + stats[s.k], 0); }
+function autoPlay(st){
+  let guard = 0;
+  while (guard++ < 20000){
+    const ev = advance(st, 10); if (!ev) continue;
+    if (ev.type === 'supply'){ if (st.E < 75 && st.inv.gel > 0){ ITEMS.gel.fx(st); st.inv.gel--; } if (st.Z > 50 && st.inv.caf > 0){ ITEMS.caf.fx(st); st.inv.caf--; } if (st.H < 75 && st.inv.water > 0){ ITEMS.water.fx(st); st.inv.water--; } if (st.Na < 55 && st.inv.salt > 0){ ITEMS.salt.fx(st); st.inv.salt--; } }
+    else if (ev.type === 'cp'){ const cp = CPS[ev.idx]; if (st.t > cp.cut) return null; if (ev.idx === CPS.length - 1) return st.t;
+      const pick = ['water','cola','banana']; if (st.B > 50 || st.S > 55) pick.push('toilet'); if (cp.menu.includes('riceball') && st.E < 60) pick.push('riceball');
+      if (cp.crew){ pick.push('dropbag'); if (st.Z > 50) pick.push('nap'); if (st.blister) pick.push('socks'); } if (cp.menu.includes('coffee') && st.Z > 40) pick.push('coffee');
+      for (const p of pick){ FOOD[p].fx(st); st.t += FOOD[p].min; } st.holding = false; st.seg++; }
+    else if (ev.type === 'fall'){ st.t += 3; st.F += 6; st.M -= 8; } else if (ev.type === 'cramp') st.t += 3; else if (ev.type === 'gi'){ st.t += 5; st.S -= 30; st.B = 0; }
+    else if (ev.type === 'bonk'){ if (st.inv.gel > 0){ ITEMS.gel.fx(st); st.inv.gel--; } } else if (ev.type === 'quit') st.M = 25;
+    clamp(st);
+  }
+  return null;
+}
+let estTimer = 0;
+function renderSetup(){
+  $('#portrait').innerHTML = runnerSVG(me.color, me.bib, 96, false);
+  $('#colors').innerHTML = COLORS.map(([c, n]) => `<button type="button" class="sw ${c === me.color ? 'sel' : ''}" style="background:${c}" data-c="${c}" role="radio" aria-checked="${c === me.color}" aria-label="${n}"></button>`).join('');
+  const left = STAT_POOL - used();
+  $('#poolLeft').textContent = '남은 포인트 ' + left;
+  $('#poolLeft').style.background = left === 0 ? 'var(--green-l)' : 'var(--yellow)';
+  $('#presets').innerHTML = PRESETS.map(([n], i) => `<button type="button" class="btn sm" data-preset="${i}">${n}</button>`).join('');
+  $('#stats').innerHTML = STATS.map(s => {
+    const v = stats[s.k]; let pips = '';
+    for (let i = 1; i <= STAT_MAX; i++) pips += `<button type="button" class="pip ${i <= v ? 'on' : ''}" data-set="${s.k}:${i}" aria-label="${s.name} ${i}" tabindex="-1"></button>`;
+    return `<div class="srow"><div><div class="nm">${s.name}</div><div class="ds">${s.desc}</div></div><div class="pips">${pips}</div><button type="button" class="pm" data-d="${s.k}:-1" aria-label="${s.name} 내리기" ${v <= STAT_MIN ? 'disabled' : ''}>−</button><div class="sval num">${v}</div><button type="button" class="pm" data-d="${s.k}:1" aria-label="${s.name} 올리기" ${v >= STAT_MAX || left <= 0 ? 'disabled' : ''}>+</button></div>`;
+  }).join('');
+  const d = derive(scaleStats(stats));
+  const pg = g => 60 * (1.15 / d.vF + (g > 0 ? g * 1000 / d.VAM : Math.max(-g - 0.04, 0) * 1000 / d.DESC - Math.min(-g, 0.04) * 1.6 / d.vF));
+  $('#derived').innerHTML = `<div class="dv"><div class="k">업힐 페이스 · 경사 15%</div><div class="v num">${fmtPace(pg(0.15))}<small style="font-size:13px"> /km</small></div></div><div class="dv"><div class="k">다운힐 페이스 · 경사 −15%</div><div class="v num">${fmtPace(pg(-0.15))}<small style="font-size:13px"> /km</small></div></div><div class="dv"><div class="k">평지 페이스 · 트레일</div><div class="v num">${fmtPace(pg(0))}<small style="font-size:13px"> /km</small></div></div>`;
+  const ok = me.name.trim().length > 0 && left === 0;
+  $('#startBtn').disabled = !ok;
+  $('#startBtn').textContent = left !== 0 ? `포인트 ${left > 0 ? left + '점을 더 나눠 주세요' : (-left) + '점 초과'}` : (me.name.trim() ? '출발선에 서기' : '이름을 쓰면 출발할 수 있어요');
+  clearTimeout(estTimer);
+  estTimer = setTimeout(() => {
+    const runs = []; for (let i = 0; i < 3; i++){ const r = autoPlay(newRunner(stats)); if (r) runs.push(r); }
+    $('#estTime').textContent = runs.length ? '약 ' + fmtDur(runs.reduce((a, b) => a + b, 0) / runs.length) : '컷오프 위험';
+  }, 120);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.c){ me.color = b.dataset.c; LS.set('tj.color', me.color); renderSetup(); }
+  else if (b.dataset.preset){ stats = {...PRESETS[+b.dataset.preset][1]}; renderSetup(); }
+  else if (b.dataset.d){ const [k, dv] = b.dataset.d.split(':'); const n = stats[k] + +dv; if (n >= STAT_MIN && n <= STAT_MAX && (dv < 0 || used() < STAT_POOL)){ stats[k] = n; renderSetup(); } }
+  else if (b.dataset.set){ const [k, v] = b.dataset.set.split(':'); const want = Math.max(STAT_MIN, +v), room = STAT_POOL - used() + stats[k]; stats[k] = Math.min(want, room, STAT_MAX); renderSetup(); }
+});
+$('#nameInput').value = me.name;
+$('#nameInput').addEventListener('input', e => { me.name = e.target.value.slice(0, 12); LS.set('tj.name', me.name); renderSetup(); });
+$('#cplist').innerHTML = CPS.slice(1).map((c, i) => `<span>${i + 1 === 12 ? 'F' : i + 1}. ${c.name}${c.crew ? ' · 크루' : ''}<b>${c.km}km · ${fmtClock(c.cut)}</b></span>`).join('');
+
+// ---------- race ----------
+let running = false, lastPace = '', st = null, rivals = [], speed = 1, modalOpen = false, lastT = 0, raf = 0, lastRender = 0, finished = false;
+const GAME_MIN_PER_SEC = 6;
+const GAUGES = [['E','에너지',0],['H','수분',0],['Na','전해질',0],['M','멘탈',0],['S','위장 부담',1],['F','근피로',1],['Z','졸음',1],['B','화장실',1]];
+function gColor(v, rev){ const x = rev ? 100 - v : v; return x > 50 ? '#7fae4e' : x > 25 ? '#f2c230' : '#b9322a'; }
+function gaugeHTML(keys){ return GAUGES.filter(g => !keys || keys.includes(g[0])).map(([k, n, rev]) => `<div class="g"><div class="gl"><span>${n}</span><span>${Math.round(st[k])}</span></div><div class="gb"><i style="width:${st[k]}%;background:${gColor(st[k], rev)}"></i></div></div>`).join(''); }
+function statusTags(){
+  const t = [];
+  if (st.E < 25) t.push('에너지 고갈'); if (st.H < 30) t.push('탈수'); if (st.Na < 25) t.push('전해질 부족'); if (st.S > 70) t.push('속이 더부룩');
+  if (st.Z > 70) t.push('꾸벅꾸벅'); if (st.B > 85) t.push('화장실 급함'); if (st.blister) t.push('물집'); if (st.cramp > 0) t.push('쥐'); if (st.holding) t.push('참는 중');
+  const hc = clockHour(st.t); if (hc >= 19.5 || hc < 6) t.push('야간 · 헤드랜턴');
+  return t.map(x => `<span class="tag">${x}</span>`).join('');
+}
+function addLog(text){ st.log.unshift(fmtClock(st.t).slice(2) + '  ' + text); st.log.length = Math.min(st.log.length, 6); $('#log').innerHTML = st.log.map(l => `<div>${esc(l)}</div>`).join(''); }
+let toastT = 0;
+function toast(text){ const el = $('#toast'); el.textContent = text; el.style.opacity = 1; clearTimeout(toastT); toastT = setTimeout(() => el.style.opacity = 0, 2600); }
+function standings(){
+  const list = rivals.map((r, i) => ({ name: r.name, km: rivalKm(r, st.t), fin: st.t >= r.target ? r.target : null, rival: i }));
+  list.push({ name: me.name, km: st.km, fin: finished ? st.t : null, me: true });
+  list.sort((a, b) => (a.fin != null && b.fin != null) ? a.fin - b.fin : (a.fin != null ? -1 : b.fin != null ? 1 : b.km - a.km));
+  return list;
+}
+function estTo(kmTo){ let t = 0, m = speedMul(st); for (let k = st.km; k < kmTo; k += 0.2) t += paceHpk(st.d, k) * Math.min(0.2, kmTo - k) * 60 / m; return t; }
+function renderRace(full){
+  const mypos = routePos(st.km);
+  $('#meTok').setAttribute('transform', `translate(${mypos[0].toFixed(1)},${mypos[1].toFixed(1)})`);
+  const X = drawProfile.X, Y = drawProfile.Y;
+  $('#profLine').setAttribute('x1', X(st.km)); $('#profLine').setAttribute('x2', X(st.km));
+  $('#profMe').setAttribute('cx', X(st.km)); $('#profMe').setAttribute('cy', Y(elevAt(st.km)));
+  const hc = clockHour(st.t); let n = 0;
+  if (hc >= 20.5 || hc < 5.5) n = 1; else if (hc >= 19.5) n = hc - 19.5; else if (hc < 6.5) n = 6.5 - hc;
+  $('#night').setAttribute('opacity', (0.34 * n).toFixed(3));
+  $('#clock').textContent = fmtClock(st.t);
+  $('#elapsed').textContent = '경과 ' + fmtDur(st.t, true);
+  if (!full && performance.now() - lastRender < 160) return;
+  lastRender = performance.now();
+  rivals.forEach((r, i) => { const k = rivalKm(r, st.t), p = routePos(k); const g = document.getElementById('rv' + i); g.setAttribute('transform', `translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); g.style.opacity = k >= TOTAL_KM ? 0.3 : 1;
+    const pr = document.getElementById('pr' + i); pr.setAttribute('cx', drawProfile.X(k)); pr.setAttribute('cy', drawProfile.Y(elevAt(k)) - 2); });
+  // completed route
+  const pts = []; for (let k = 0; k <= st.km; k += 0.5) pts.push(routePos(k)); pts.push(mypos);
+  $('#routeDone').setAttribute('d', pts.length > 1 ? 'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L') : '');
+  let pd = `M${X(0)},144`; for (let k = 0; k <= st.km; k += 0.4) pd += ` L${X(k).toFixed(1)},${Y(elevAt(k)).toFixed(1)}`; pd += ` L${X(st.km)},${Y(elevAt(st.km))} L${X(st.km)},144 Z`;
+  $('#profDone').setAttribute('d', pd);
+  $('#sky').innerHTML = n > 0.5 ? `<circle r="24" fill="#f6e7b0" stroke="#2b2420" stroke-width="2"/><circle cx="10" cy="-6" r="20" fill="#2c3a6b" opacity=".0"/><circle cx="-8" cy="-4" r="3" fill="#e0cf8f"/><circle cx="6" cy="8" r="4" fill="#e0cf8f"/>` : `<circle r="24" fill="#f2c230" stroke="#2b2420" stroke-width="2"/><g stroke="#2b2420" stroke-width="2.5" stroke-linecap="round">${[0,1,2,3,4,5,6,7].map(i => { const a = i * Math.PI / 4; return `<line x1="${Math.cos(a) * 31}" y1="${Math.sin(a) * 31}" x2="${Math.cos(a) * 39}" y2="${Math.sin(a) * 39}"/>`; }).join('')}</g>`;
+  const sd = standings(), myRank = sd.findIndex(x => x.me) + 1;
+  $('#chipRank').textContent = `순위 ${myRank} / ${sd.length}`;
+  $('#chipKm').textContent = st.km.toFixed(1) + ' / 148.8 km';
+  $('#chipEle').textContent = Math.round(elevAt(st.km)).toLocaleString() + ' m';
+  $('#tbSub').textContent = `배번 ${me.bib} · ${PACE[st.pace].name} · 페이스 ${fmtPace(60 / speedNow(st))} /km`;
+  $('#gauges').innerHTML = gaugeHTML() + `<div class="status">${statusTags()}</div>`;
+  const nx = CPS[st.seg + 1], eta = st.t + estTo(nx.km), margin = nx.cut - eta;
+  $('#nextBox').innerHTML = `<div class="lbl">다음 ${st.seg + 1 === CPS.length - 1 ? '피니시' : 'CP' + (st.seg + 1)}${nx.crew ? ' · 크루' : ''}</div><div style="font-family:var(--display);font-size:20px">${nx.name}</div>
+    <div class="row"><span>남은 거리</span><b class="num">${(nx.km - st.km).toFixed(1)} km</b></div>
+    <div class="row"><span>예상 도착</span><b class="num">${fmtClock(eta)}</b></div>
+    <div class="row"><span>컷오프</span><b class="num ${margin < 30 ? 'warn' : ''}">${fmtClock(nx.cut)} (여유 ${margin < 0 ? '−' + fmtDur(-margin) : fmtDur(margin)})</b></div>
+    <div class="row"><span>보급 주머니</span><b class="num" style="font-size:14px">젤 ${st.inv.gel} · 카페인 ${st.inv.caf} · 바 ${st.inv.bar} · 소금 ${st.inv.salt} · 물 ${st.inv.water}/4</b></div>`;
+  const top = sd.slice(0, 6); if (myRank > 6) top.push(sd[myRank - 1]);
+  const lead = sd[0];
+  $('#ranks').innerHTML = top.map(x => { const r = sd.indexOf(x) + 1; const info = x.fin != null ? '완주 ' + fmtDur(x.fin) : (x === lead ? x.km.toFixed(1) + 'km' : '−' + (lead.fin != null ? (TOTAL_KM - x.km) : (lead.km - x.km)).toFixed(1) + 'km'); return `<div class="rk-row ${x.me ? 'me' : ''}"><span>${r}</span><span class="n">${esc(x.name)}</span><span class="d">${info}</span></div>`; }).join('');
+  $('#app').classList.toggle('paused', modalOpen || speed === 0);
+  if (lastPace !== st.pace){ lastPace = st.pace; $('#paceset').innerHTML = Object.entries(PACE).map(([k, p]) => `<button type="button" class="btn sm ${st.pace === k ? 'on' : ''}" data-pace="${k}">${p.name}</button>`).join(''); }
+}
+function setSpeed(v){ speed = v; document.querySelectorAll('#speedCtrls button').forEach(b => b.classList.toggle('on', +b.dataset.sp === v)); $('#app').classList.toggle('paused', v === 0); }
+$('#speedCtrls').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setSpeed(+b.dataset.sp); });
+$('#paceset').addEventListener('click', e => { const b = e.target.closest('button'); if (b){ st.pace = b.dataset.pace; renderRace(true); } });
+$('#supplyBtn').addEventListener('click', () => { if (!modalOpen) openSupply(false); });
+
+function startRace(){
+  st = newRunner(stats); finished = false; lastPace = '';
+  rivals = makeRivals(Math.floor(Math.random() * 1e9));
+  $('#scrSetup').hidden = true; $('#scrResult').hidden = true; $('#scrRace').hidden = false;
+  $('#tbPortrait').innerHTML = runnerSVG(me.color, me.bib, 44, false);
+  $('#tbName').textContent = me.name;
+  buildMap(); drawProfile();
+  setSpeed(1); renderRace(true);
+  addLog('제주월드컵경기장 출발! 금요일 밤 9시.');
+  window.scrollTo({top: 0});
+  showModal({kick:'출발 브리핑', title:'금요일 21:00, 출발선', body:`<p>밤새 한라산을 넘고, 토요일엔 동쪽 들판과 숲, 일요일 새벽엔 서귀포로 돌아와요. 5~7km마다 보급 타이밍이 오고, CP에서는 먹을 것·화장실·휴식을 고를 수 있어요. 컷오프를 넘기면 탈락이에요.</p><p style="margin-top:8px">가상 러너 ${rivals.length}명과 함께 달려요. 우승 후보 <b>${esc(rivals[0].name)}</b>의 목표는 ${fmtDur(rivals[0].target)}.</p>`, choices:[{label:'출발!', primary:true, act(){ addLog('레이스 시작'); }}]});
+  lastT = performance.now(); cancelAnimationFrame(raf); running = true; raf = requestAnimationFrame(loop);
+}
+$('#startBtn').addEventListener('click', () => { if (!$('#startBtn').disabled) startRace(); });
+
+function loop(now){
+  if (!running) return;
+  const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
+  if (!modalOpen && speed > 0 && !finished && !st.dnf){
+    const ev = advance(st, dt * GAME_MIN_PER_SEC * speed);
+    if (ev) handleEvent(ev);
+  }
+  if (!finished && !st.dnf) renderRace(false);
+  raf = requestAnimationFrame(loop);
+}
+// ---------- supply icons (paper cut-out) ----------
+const IC = {
+  gel:`<path d="M10 4 H22 L23 9 L21 11 V26 Q21 29 18 29 H14 Q11 29 11 26 V11 L9 9 Z" fill="#f2c230"/><rect x="12.5" y="14" width="7" height="8" rx="1" fill="#fbf8f1"/><path d="M14 18 H18" fill="none"/>`,
+  caf:`<path d="M10 4 H22 L23 9 L21 11 V26 Q21 29 18 29 H14 Q11 29 11 26 V11 L9 9 Z" fill="#8a5a2b"/><path d="M17.5 12 L12.5 19 H16 L14 26 L20 18 H16.5 L18.5 12 Z" fill="#f2c230"/>`,
+  bar:`<rect x="3" y="11" width="26" height="10" rx="2" fill="#b9322a"/><path d="M3 11 L6 16 L3 21 M29 11 L26 16 L29 21" fill="none"/><rect x="10" y="13" width="12" height="6" rx="1" fill="#fbf8f1"/>`,
+  salt:`<g transform="rotate(-40 16 16)"><rect x="5" y="11" width="22" height="10" rx="5" fill="#fbf8f1"/><path d="M16 11 H22 A5 5 0 0 1 22 21 H16 Z" fill="#1f5fae"/></g><circle cx="9" cy="25" r="1.3" fill="#fbf8f1"/><circle cx="25" cy="8" r="1.1" fill="#fbf8f1"/>`,
+  water:`<rect x="13" y="3" width="6" height="4" rx="1" fill="#1f5fae"/><path d="M11 8 Q16 6 21 8 Q24 14 22.5 22 Q21.5 29 16 29 Q10.5 29 9.5 22 Q8 14 11 8 Z" fill="#8ec9d8"/><path d="M11.5 17 Q16 19.5 20.5 17" fill="none"/>`,
+  pee:`<circle cx="10" cy="19" r="7" fill="#4f8f3a"/><circle cx="22" cy="19" r="7" fill="#4f8f3a"/><circle cx="16" cy="12" r="7.5" fill="#7fae4e"/><path d="M5 28 H27" fill="none"/>`,
+  cola:`<rect x="9" y="5" width="14" height="23" rx="3" fill="#b9322a"/><rect x="9" y="12" width="14" height="8" fill="#fbf8f1"/><path d="M12 17 Q16 13.5 20 17" fill="none" stroke="#b9322a"/><path d="M12 5 V3.5 H20 V5" fill="none"/>`,
+  banana:`<path d="M6 9 Q7.5 24 24 24.5 Q28 24.5 27 21 Q14 22 10.5 8.5 Z" fill="#f2c230"/><path d="M6 9 L4.5 5.5 L7.5 5 Z" fill="#6b4120"/>`,
+  fruit:`<circle cx="16" cy="18" r="10" fill="#f29a2e"/><path d="M16 8 Q20 3 25 5 Q21 10 16 8 Z" fill="#4f8f3a"/><circle cx="12.5" cy="15" r="1.2" fill="#f6bb6b" stroke="none"/>`,
+  riceball:`<path d="M16 4.5 Q19 4.5 27 21 Q28.5 27 23 27 H9 Q3.5 27 5 21 Q13 4.5 16 4.5 Z" fill="#fbf8f1"/><rect x="11" y="18.5" width="10" height="8.5" fill="#2b2420"/>`,
+  noodle:`<path d="M4 15 H28 Q27 27 16 27 Q5 27 4 15 Z" fill="#b9322a"/><path d="M7 15 Q9 11 11 15 Q13 11 15 15 Q17 11 19 15 Q21 11 23 15 Q25 11 26.5 15" fill="#f2c230"/><path d="M11 9 Q9 6.5 11 4 M16 9 Q14 6.5 16 4 M21 9 Q19 6.5 21 4" fill="none" stroke-width="1.3"/>`,
+  coffee:`<path d="M6 12 H22 V19 Q22 27 14 27 Q6 27 6 19 Z" fill="#fbf8f1"/><path d="M22 14 Q27 14 27 18 Q27 22 22 22" fill="none"/><rect x="7.5" y="13.2" width="13" height="3" fill="#8a5a2b" stroke="none"/><path d="M11 9 Q9 6.5 11 4 M16 9 Q14 6.5 16 4" fill="none" stroke-width="1.3"/>`,
+  toilet:`<rect x="7" y="3.5" width="10" height="11" rx="1.5" fill="#fbf8f1"/><path d="M5 14.5 H27 Q27 22 19 24 V28.5 H11 V24 Q5 22 5 14.5 Z" fill="#fbf8f1"/><path d="M8 17 H24" fill="none" stroke="#8ec9d8" stroke-width="2"/>`,
+  rest:`<rect x="8" y="4" width="16" height="12" rx="2" fill="#1f5fae"/><rect x="6" y="16" width="20" height="4.5" rx="1.2" fill="#1f5fae"/><path d="M8.5 20.5 V28.5 M23.5 20.5 V28.5" fill="none" stroke-width="2"/>`,
+  dropbag:`<path d="M7 11 H25 L27 28 H5 Z" fill="#4f8f3a"/><path d="M12 11 Q12 4.5 16 4.5 Q20 4.5 20 11" fill="none" stroke-width="1.8"/><rect x="12" y="16" width="8" height="5" rx="1" fill="#f2c230"/>`,
+  socks:`<path d="M10.5 3.5 H19.5 V16 L25 19.5 Q28.5 22.5 25.5 26 Q23.5 28 19.5 26 L10.5 21 Q8.5 19.5 8.5 16.5 Z" fill="#fbf8f1"/><path d="M10.5 7.5 H19.5 M10.5 10.5 H19.5" fill="none" stroke="#b9322a" stroke-width="1.8"/>`,
+  nap:`<rect x="3" y="16" width="26" height="11" rx="5" fill="#fbf8f1"/><path d="M14 4 H20 L14 11 H20 M22 9 H26 L22 14 H26" fill="none" stroke="#1f5fae" stroke-width="1.8"/>`,
+  massage:`<path d="M9 28 V16 Q9 14 11 14 Q13 14 13 16 V8 Q13 6 15 6 Q17 6 17 8 V14 Q17 12 19 12 Q21 12 21 14 V16 Q21 14 23 14 Q25 14 25 16 V22 Q25 28 19 28 Z" fill="#f9d0b0"/>`
+};
+function iconSVG(k, size){ return `<svg viewBox="0 0 32 32" width="${size || 34}" height="${size || 34}" aria-hidden="true" style="flex:none;display:block;overflow:visible"><g stroke="#2b2420" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">${IC[k] || ''}</g></svg>`; }
+// ---------- effect messages ----------
+const FX_LABEL = {E:['에너지',0],H:['수분',0],Na:['전해질',0],M:['멘탈',0],S:['위장 부담',1],F:['근피로',1],Z:['졸음',1],B:['화장실',1]};
+function snap(){ return {E:st.E,H:st.H,Na:st.Na,M:st.M,S:st.S,F:st.F,Z:st.Z,B:st.B, water:st.inv.water, blister:st.blister, inv:Object.values(st.inv).reduce((a,b)=>a+b,0)}; }
+function diffFx(a, b){
+  const out = [];
+  for (const k of Object.keys(FX_LABEL)){ const d = Math.round(b[k] - a[k]); if (Math.abs(d) >= 1){ const [n, rev] = FX_LABEL[k]; out.push({t: n + ' ' + (d > 0 ? '+' : '−') + Math.abs(d), good: rev ? d < 0 : d > 0}); } }
+  if (b.water > a.water) out.push({t:'물 ' + b.water + '모금 충전', good:true});
+  if (a.blister && !b.blister) out.push({t:'물집 해결', good:true});
+  if (b.inv > a.inv + 1) out.push({t:'보급 주머니 가득', good:true});
+  return out;
+}
+function fxChips(list){ return list.map(x => `<span class="fx ${x.good ? 'up' : 'dn'}">${x.t}</span>`).join(''); }
+function fxText(list){ return list.map(x => x.t).join(' · '); }
+function previewFx(keys){
+  const save = JSON.stringify(st), a = snap();
+  for (const k of keys) FOOD[k].fx(st); clamp(st);
+  const b = snap(); const r = diffFx(a, b);
+  const back = JSON.parse(save); Object.assign(st, back); st.d = derive(st.s);
+  return r;
+}
+
+// ---------- modals ----------
+function closeModal(){ $('#modalRoot').innerHTML = ''; modalOpen = false; lastT = performance.now(); }
+function showModal({kick, title, body, choices, gauges}){
+  modalOpen = true;
+  const html = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">${kick ? `<div class="kick">${kick}</div>` : ''}<h3 id="mTitle">${title}</h3>${body || ''}${gauges ? `<div class="mini">${gaugeHTML()}</div>` : ''}<div class="mbtns">${choices.map((c, i) => `<button type="button" class="btn ${c.primary ? 'primary' : ''}" data-ch="${i}" ${c.disabled ? 'disabled' : ''}>${c.label}</button>`).join('')}</div></div></div>`;
+  $('#modalRoot').innerHTML = html;
+  $('#modalRoot').querySelectorAll('[data-ch]').forEach(b => b.addEventListener('click', () => { const c = choices[+b.dataset.ch]; closeModal(); const a = st ? snap() : null; c.act && c.act(); if (!st) return; clamp(st); const fx = a ? diffFx(a, snap()) : []; if (fx.length && !st.dnf) toast(fxText(fx)); renderRace(true); }));
+  const f = $('#modalRoot').querySelector('[data-ch]'); f && f.focus();
+}
+function useItem(k){ if (st.inv[k] <= 0) return; st.inv[k]--; ITEMS[k].fx(st); st.t += ITEMS[k].min; clamp(st); }
+function openSupply(auto){
+  modalOpen = true;
+  const flavor = ['숨을 고르며 주머니를 뒤진다.','오르막 전에 뭐라도 넣어 둘까?','발걸음을 늦추고 보급 타이밍.','목이 마르다. 뭐부터 먹지?'];
+  const used = []; let last = null;
+  const draw = () => {
+    const opts = Object.entries(ITEMS).map(([k, it]) => `<button type="button" class="opt" data-it="${k}" ${st.inv[k] <= 0 ? 'disabled' : ''}>${iconSVG(k)}<span class="ot"><span class="on">${it.name}</span><span class="oh">${it.hint}</span></span><span class="cnt">${st.inv[k]}</span></button>`).join('')
+      + (st.B > 45 ? `<button type="button" class="opt" data-it="pee">${iconSVG('pee')}<span class="ot"><span class="on">노상 볼일</span><span class="oh">화장실 비우기 · 1.5분</span></span></button>` : '');
+    $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">${st.km.toFixed(1)} km · ${fmtClock(st.t)}</div><h3 id="mTitle">${auto ? '보급 타이밍' : '보급 꺼내기'}</h3>
+      ${last ? `<div class="fxline" role="status">${iconSVG(last.k, 28)}<div><b>${last.name}</b> 먹음<div class="fxs">${fxChips(last.fx) || '<span class="fx">변화 없음</span>'}</div></div></div>` : `<p>${auto ? flavor[Math.floor(st.km) % flavor.length] : '걸으면서 주머니에서 꺼내 먹어요.'}</p>`}
+      <div class="mini">${gaugeHTML()}</div><div class="opts">${opts}</div><div class="mbtns"><button type="button" class="btn primary" id="supDone">${used.length ? '계속 달리기' : '패스하고 달리기'}</button></div></div></div>`;
+    $('#modalRoot').querySelectorAll('[data-it]').forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.it, a = snap();
+      if (k === 'pee'){ st.B = 0; st.t += 1.5; st.M -= 1; }
+      else useItem(k);
+      clamp(st);
+      const name = k === 'pee' ? '노상 볼일' : ITEMS[k].name, fx = diffFx(a, snap());
+      used.push(name); last = {k, name, fx};
+      addLog(name + (fx.length ? ' — ' + fxText(fx) : ''));
+      draw();
+    }));
+    $('#supDone').addEventListener('click', () => { closeModal(); renderRace(true); });
+    $('#supDone').focus();
+  };
+  draw();
+}
+function arriveCP(idx){
+  const cp = CPS[idx], arr = st.t;
+  const sd = standings(), rank = sd.findIndex(x => x.me) + 1;
+  st.splits.push({cp: idx, arr, dep: arr, rank});
+  if (arr > cp.cut){ st.dnf = {where: cp.name, why: `${cp.name} 컷오프(${fmtClock(cp.cut)})를 넘겨 도착했어요.`}; return endRace(); }
+  if (idx === CPS.length - 1){ finished = true; return endRace(); }
+  st.M += cp.crew ? 10 : 5; st.holding = false; clamp(st);
+  addLog(`CP${idx} ${cp.name} 도착 (${rank}위)`);
+  const keys = [...cp.menu, ...(cp.crew ? ['dropbag','socks','nap','massage'] : [])];
+  const sel = new Set();
+  const draw = () => {
+    const stop = [...sel].reduce((a, k) => a + FOOD[k].min, 0), dep = st.t + stop, margin = cp.cut - dep;
+    const opts = keys.map(k => `<button type="button" class="opt ${sel.has(k) ? 'sel' : ''} ${FOOD[k].crew ? 'crew' : ''}" data-fd="${k}" aria-pressed="${sel.has(k)}">${iconSVG(k === 'water' ? 'water' : k)}<span class="ot"><span class="on">${FOOD[k].name}</span><span class="oh">${FOOD[k].hint}</span></span><span class="om">${FOOD[k].min}분</span></button>`).join('');
+    const pv = sel.size ? previewFx([...sel]) : [];
+    $('#modalRoot').innerHTML = `<div class="ov"><div class="paper modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="kick">CP${idx}${cp.crew ? ' · 크루 CP' : ''} · ${cp.km} km · 현재 ${rank}위</div><h3 id="mTitle">${cp.name}</h3><div class="mini">${gaugeHTML()}</div><div class="opts">${opts}</div>
+      ${sel.size ? `<div class="fxline"><div><b>먹고 나면</b><div class="fxs">${fxChips(pv) || '<span class="fx">변화 없음</span>'}</div></div></div>` : ''}
+      <div class="sumline"><span>정차 <b class="num">${stop}분</b> · 출발 <b class="num">${fmtClock(dep)}</b></span><span class="${margin < 20 ? 'warn' : ''}">컷오프 ${fmtClock(cp.cut)} · 여유 <b class="num">${margin < 0 ? '초과!' : fmtDur(margin)}</b></span></div>
+      <div class="mbtns"><button type="button" class="btn" id="cpPass">그냥 통과</button><button type="button" class="btn primary" id="cpGo" ${sel.size ? '' : 'disabled'}>먹고 출발</button></div></div></div>`;
+    $('#modalRoot').querySelectorAll('[data-fd]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.fd; sel.has(k) ? sel.delete(k) : sel.add(k); draw(); }));
+    $('#cpPass').addEventListener('click', () => depart([]));
+    $('#cpGo').addEventListener('click', () => depart([...sel]));
+  };
+  const depart = list => {
+    const a = snap();
+    for (const k of list){ FOOD[k].fx(st); st.t += FOOD[k].min; }
+    clamp(st); const fx = diffFx(a, snap());
+    if (list.length && fx.length) toast(`CP${idx} 보급 효과 — ${fxText(fx)}`);
+    clamp(st); st.splits[st.splits.length - 1].dep = st.t; st.stopMin += st.t - arr;
+    closeModal();
+    if (st.t > cp.cut){ st.dnf = {where: cp.name, why: `${cp.name}에서 오래 머물러 컷오프(${fmtClock(cp.cut)})를 넘겼어요.`}; return endRace(); }
+    addLog(list.length ? `CP${idx}: ${list.map(k => FOOD[k].name).join(', ')}${fx.length ? ' — ' + fxText(fx) : ''}` : `CP${idx} 통과`);
+    st.seg++; st.nextSupply = st.km + 4 + Math.random() * 2; renderRace(true);
+  };
+  modalOpen = true; draw(); renderRace(true);
+}
+function handleEvent(ev){
+  if (ev.type === 'scenic'){ toast(ev.text); addLog(ev.text); return; }
+  if (ev.type === 'supply') return openSupply(true);
+  if (ev.type === 'cp') return arriveCP(ev.idx);
+  const E = {
+    fall: {kick:'다운힐', title:'꽈당! 넘어졌다', body:'<p>젖은 현무암에 발이 미끄러졌다. 무릎이 쓰라리다.</p>', choices:[
+      {label:'앉아서 상태 확인 (3분)', act(){ st.t += 3; st.F += 3; st.M -= 4; addLog('넘어짐 — 상태 확인 후 출발'); }},
+      {label:'바로 일어나 달린다', primary:true, act(){ st.t += 0.5; st.F += 8; st.M -= 8; addLog('넘어짐 — 털고 바로 출발'); }}]},
+    cramp: {kick:'경련', title:'종아리에 쥐가 났다', body:'<p>근육이 돌처럼 굳는다.</p>', choices:[
+      ...(st.inv.salt > 0 ? [{label:'소금캡슐 + 스트레칭 (3분)', primary:true, act(){ st.inv.salt--; st.Na += 25; st.t += 3; st.cramp = 0; addLog('쥐 — 소금 먹고 스트레칭'); }}] : []),
+      {label:'스트레칭 (3분)', act(){ st.t += 3; st.cramp = 0; st.Na += 0; addLog('쥐 — 스트레칭'); }},
+      {label:'참고 절뚝이며 간다', act(){ st.cramp = 15; st.M -= 5; addLog('쥐 — 참고 진행'); }}]},
+    gi: {kick:'위장 트러블', title:'배가 신호를 보낸다…', body:'<p>너무 많이 먹었나. 지금 당장 해결하지 않으면 곤란하다.</p>', choices:[
+      {label:'숲으로 (5분)', primary:true, act(){ st.t += 5; st.S -= 30; st.B = 0; st.M -= 3; addLog('숲에서 급한 일 해결'); }},
+      {label:'다음 CP까지 참는다', act(){ st.holding = true; st.M -= 8; addLog('배를 움켜쥐고 참는 중'); }}]},
+    blister: {kick:'발', title:'발바닥에 물집이 잡혔다', body:'<p>한 걸음마다 따끔하다. 크루 CP에서 양말·신발을 갈아 신으면 나아진다.</p>', choices:[{label:'확인', primary:true, act(){ addLog('물집 발생'); }}]},
+    bonk: {kick:'봉크', title:'다리에 힘이 안 들어간다', body:'<p>에너지가 바닥났다. 손이 떨린다.</p>', choices:[
+      ...(st.inv.gel >= 2 ? [{label:'젤 두 개 연속', primary:true, act(){ useItem('gel'); useItem('gel'); addLog('봉크 — 젤 두 개 투입'); }}] : []),
+      ...(st.inv.gel >= 1 ? [{label:'젤 하나', act(){ useItem('gel'); addLog('봉크 — 젤 하나'); }}] : []),
+      ...(st.inv.bar >= 1 ? [{label:'에너지바', act(){ useItem('bar'); addLog('봉크 — 에너지바'); }}] : []),
+      {label:'걸으면서 버틴다', act(){ st.pace = 'easy'; addLog('봉크 — 걸으며 버팀'); }}]},
+    quit: {kick:'멘탈', title:'그만두고 싶다…', body:'<p>왜 이걸 시작했을까. 다리도, 마음도 무겁다.</p>', choices:[
+      {label:'한 걸음만 더', primary:true, act(){ st.M = 30; addLog('멘탈 붕괴 직전 — 다시 일어섬'); }},
+      {label:'기권한다', act(){ st.dnf = {where: st.km.toFixed(1) + ' km 지점', why:'스스로 레이스를 멈췄어요.'}; endRace(); }}]}
+  }[ev.type];
+  if (E) showModal({...E, gauges:true});
+}
+// ---------- end ----------
+let submitted = null;
+async function endRace(){
+  running = false; cancelAnimationFrame(raf); modalOpen = false;
+  const sd = standings(), rank = sd.findIndex(x => x.me) + 1;
+  $('#scrRace').hidden = true; $('#scrResult').hidden = false; window.scrollTo({top: 0});
+  const ok = finished && !st.dnf;
+  const rows = st.splits.slice(1).map((s, i) => { const prev = st.splits[i]; return `<tr><td>${s.cp === CPS.length - 1 ? 'F' : 'CP' + s.cp} ${CPS[s.cp].short}</td><td>${fmtClock(s.arr)}</td><td>${fmtDur(s.arr - prev.dep)}</td><td>${Math.round(s.dep - s.arr)}분</td><td>${s.rank}위</td></tr>`; }).join('');
+  const top = STATS.slice().sort((a, b) => st.raw[b.k] - st.raw[a.k]).slice(0, 3).map(s => s.name + ' ' + st.raw[s.k]).join(' · ');
+  $('#resultMain').innerHTML = `<div class="lbl">${ok ? '피니시 · 제주월드컵경기장' : 'DNF · ' + esc(st.dnf.where)}</div>
+    <div class="bigtime"><div class="medal ${ok ? '' : 'dnf'}"><b>${ok ? rank : '−'}</b><span>${ok ? '위 / ' + sd.length : 'DNF'}</span></div><div><div class="v">${ok ? fmtDur(st.t, true) : st.km.toFixed(1) + ' km'}</div><div style="color:var(--muted)">${ok ? fmtClock(st.t) + ' 도착 · ' + esc(me.name) : esc(st.dnf.why)}</div></div></div>
+    ${ok ? `<p style="margin:0;font-family:var(--display);font-size:18px">${rank === 1 ? '가상 1위! 트랜스제주 100마일 우승이에요.' : `가상 1위 ${esc(rivals[0].name)}(${fmtDur(rivals[0].target)})까지 ${fmtDur(st.t - sd[0].fin)} 차이.`}</p>` : ''}
+    <div style="font-size:13px;color:var(--muted)">빌드: ${top} · CP 정차 합계 ${Math.round(st.stopMin)}분</div>
+    <div class="tablewrap"><table class="splits"><thead><tr><th>지점</th><th>도착</th><th>구간</th><th>정차</th><th>순위</th></tr></thead><tbody>${rows || '<tr><td colspan="5">기록된 CP가 없어요</td></tr>'}</tbody></table></div>
+    <div id="submitNote" style="font-size:14px;color:var(--muted)"></div>
+    <div class="mbtns" style="justify-content:flex-start"><button type="button" class="btn primary" id="againBtn">같은 빌드로 다시</button><button type="button" class="btn" id="backBtn">스탯 다시 짜기</button></div>`;
+  $('#againBtn').onclick = () => startRace();
+  $('#backBtn').onclick = () => { $('#scrResult').hidden = true; $('#scrSetup').hidden = false; me.bib = String(100 + Math.floor(Math.random() * 899)); renderSetup(); window.scrollTo({top: 0}); };
+  if (ok){
+    const rec = { name: me.name.slice(0, 12), timeMin: Math.round(st.t * 10) / 10, rank, of: sd.length, color: me.color, stats: {...st.raw}, at: Date.now(), pid: me.pid };
+    const mine = LS.get('tj.mine', []); mine.push(rec); mine.sort((a, b) => a.timeMin - b.timeMin); LS.set('tj.mine', mine.slice(0, 20));
+    submitted = rec;
+    if (Board.online){ $('#submitNote').textContent = '기록판에 올리는 중…'; try { await Board.add(rec); $('#submitNote').textContent = '기록판에 올렸어요.'; } catch(e){ $('#submitNote').textContent = e && e.code === 'quota_exceeded' ? '기록판이 가득 차서 올리지 못했어요.' : '기록판에 올리지 못했어요. 네트워크를 확인해 주세요.'; } }
+    else $('#submitNote').textContent = '공용 기록판에 연결되지 않아 이 기기에만 저장했어요.';
+  }
+  renderBoards();
+}
+// ---------- leaderboard ----------
+let records = [], boardState = 'loading';
+function validRec(r){ return r && typeof r.name === 'string' && typeof r.timeMin === 'number' && r.timeMin > 600 && r.timeMin < 2300; }
+function renderBoards(){
+  const list = boardState === 'ok' ? records : LS.get('tj.mine', []);
+  const note = boardState === 'ok' ? `완주 ${records.length}명 · 기록 순` : boardState === 'loading' ? '불러오는 중' : '이 기기 기록만';
+  const html = list.length ? list.slice(0, 20).map((r, i) => { const top = STATS.slice().sort((a, b) => (r.stats?.[b.k] || 0) - (r.stats?.[a.k] || 0)).slice(0, 2).map(s => s.name + ' ' + (r.stats?.[s.k] ?? '-')).join(' · ');
+      const d = new Date(r.at || 0); return `<div class="brow ${r.pid === me.pid ? 'me' : ''}"><span class="rk">${i + 1}</span><div style="min-width:0"><div class="nm"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid #2b2420;background:${/^#[0-9a-f]{6}$/i.test(r.color || '') ? r.color : '#fbf8f1'};margin-right:6px"></span>${esc(r.name)}</div><div class="sub">가상 ${r.rank ?? '-'}위 · ${esc(top)} · ${d.getMonth() + 1}/${d.getDate()}</div></div><span class="tm">${fmtDur(r.timeMin)}</span></div>`; }).join('')
+    : `<div class="empty">${boardState === 'loading' ? '기록을 불러오는 중…' : '아직 완주 기록이 없어요. 첫 완주자가 되어 보세요.'}</div>`;
+  for (const id of ['#board', '#board2']) $(id).innerHTML = html;
+  for (const id of ['#boardNote', '#boardNote2']) $(id).textContent = note;
+}
+// Leaderboard backend: Firebase Firestore when window.FIREBASE_CONFIG is set (web build), else the Claude artifact db, else this device only.
+const Board = { online:false, add:null };
+function onRecords(list){ records = list.filter(validRec).sort((a, b) => a.timeMin - b.timeMin); boardState = 'ok'; renderBoards(); }
+function loadScript(src){ return new Promise((ok, no) => { const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = no; document.head.appendChild(el); }); }
+(async function initBoard(){
+  const cfg = window.FIREBASE_CONFIG;
+  if (cfg && cfg.apiKey && !/^YOUR_/.test(cfg.apiKey)){
+    try {
+      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+      const fs = firebase.initializeApp(cfg).firestore();
+      fs.collection('records').orderBy('timeMin', 'asc').limit(100).onSnapshot(q => onRecords(q.docs.map(d => ({id: d.id, ...d.data()}))), () => { boardState = 'off'; renderBoards(); });
+      Board.online = true; Board.add = rec => fs.collection('records').add(rec);
+      return;
+    } catch(e){ boardState = 'off'; renderBoards(); return; }
+  }
+  for (let i = 0; i < 40 && !(window.claude && window.claude.use); i++) await new Promise(r => setTimeout(r, 100));
+  let db = null;
+  try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch(e){ db = null; }
+  if (!db){ boardState = 'off'; renderBoards(); return; }
+  db.collection('records').orderBy('timeMin', 'asc').limit(100).onSnapshot(q => onRecords(q.docs.map(d => ({id: d.id, ...d.data()}))), () => { boardState = 'off'; renderBoards(); });
+  Board.online = true; Board.add = rec => db.collection('records').add(rec);
+})();
+renderSetup(); renderBoards();
+</script></body></html>
